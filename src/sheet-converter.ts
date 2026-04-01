@@ -4,7 +4,6 @@ import { detectRegions } from "./region-detector.js";
 import { renderTable } from "./table-renderer.js";
 import { renderParagraph } from "./paragraph-renderer.js";
 
-
 /**
  * Convert a single worksheet to Markdown.
  */

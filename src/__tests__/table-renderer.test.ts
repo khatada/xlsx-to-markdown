@@ -103,6 +103,52 @@ describe("table rendering (HTML)", () => {
     expect(rows).not.toBeNull();
   });
 
+  it("converts newlines inside a cell to <br> tags", () => {
+    const wb = XLSX.utils.book_new();
+    const ws: XLSX.WorkSheet = {
+      "!ref": "A1:B2",
+      A1: { t: "s", v: "Header" },
+      B1: { t: "s", v: "Note" },
+      A2: { t: "s", v: "Alice" },
+      B2: { t: "s", v: "line1\nline2" },
+    };
+    XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+    const { markdown } = convertWorkbook(wb);
+    expect(markdown).toContain("line1<br>line2");
+  });
+
+  it("renders formula cell using computed value, not formula string", () => {
+    const wb = XLSX.utils.book_new();
+    const ws: XLSX.WorkSheet = {
+      "!ref": "A1:C2",
+      A1: { t: "s", v: "A" },
+      B1: { t: "s", v: "B" },
+      C1: { t: "s", v: "Sum" },
+      A2: { t: "n", v: 10, w: "10" },
+      B2: { t: "n", v: 20, w: "20" },
+      C2: { t: "n", v: 30, f: "A2+B2", w: "30" },
+    };
+    XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+    const { markdown } = convertWorkbook(wb);
+    expect(markdown).toContain("<td");
+    expect(markdown).toContain("30");
+    expect(markdown).not.toContain("A2+B2");
+  });
+
+  it("uses emptyCell placeholder for empty table cells", () => {
+    const wb = buildWorkbook([
+      {
+        name: "Sheet1",
+        data: [
+          ["A", "B"],
+          ["val", undefined],
+        ],
+      },
+    ]);
+    const { markdown } = convertWorkbook(wb, { emptyCell: "—" });
+    expect(markdown).toContain("<td>—</td>");
+  });
+
   it("omits thead and uses only tbody when headerRow is false", () => {
     const wb = buildWorkbook([
       {

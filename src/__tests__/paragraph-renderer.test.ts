@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import * as XLSX from "xlsx";
 import { convertWorkbook } from "../index.js";
 import { buildWorkbook, normalise } from "./helpers.js";
 
@@ -24,6 +25,32 @@ describe("paragraph rendering", () => {
     const { markdown } = convertWorkbook(wb);
     expect(normalise(markdown)).toContain("First paragraph");
     expect(normalise(markdown)).toContain("Second paragraph");
+  });
+
+  it("joins multiple cells in the same row with a space", () => {
+    const wb = buildWorkbook([
+      {
+        name: "Sheet1",
+        // Two cells in row 0 — both sparse so treated as paragraph
+        data: [["Hello", "World"]],
+      },
+    ]);
+    const { markdown } = convertWorkbook(wb, { tableDetection: { minRows: 2, minColumns: 3 } });
+    expect(normalise(markdown)).toBe("Hello World");
+  });
+
+  it("preserves newlines within a paragraph cell", () => {
+    const wb = XLSX.utils.book_new();
+    const ws: XLSX.WorkSheet = {
+      "!ref": "A1:A1",
+      A1: { t: "s", v: "line1\nline2\nline3" },
+    };
+    XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+    const { markdown } = convertWorkbook(wb);
+    // Newlines are preserved in paragraph output
+    expect(markdown).toContain("line1");
+    expect(markdown).toContain("line2");
+    expect(markdown).toContain("line3");
   });
 
   it("mixes text and table content in order", () => {
