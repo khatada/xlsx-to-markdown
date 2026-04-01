@@ -4,8 +4,16 @@ description: >
   Read, create, or supersede Architecture Decision Records (ADRs) in this
   project. Trigger on any of: "/adr", "ADRを作成", "ADRを追加", "ADRを更新",
   "ADRを読む", "設計決定を記録", "アーキテクチャ決定".
-  Also trigger proactively when the user makes a design decision that should
-  be documented (new library choice, algorithm change, format change, etc.).
+
+  IMPORTANT — also trigger AUTOMATICALLY (without waiting for user instruction)
+  in these situations:
+  - After implementing or committing any of the following types of changes:
+    new library/dependency added, algorithm changed, data structure changed
+    (e.g. new field added to a core interface), public API added/changed/removed,
+    output format changed, detection heuristic changed.
+  - Before starting implementation of a non-trivial design decision, to check
+    whether an existing ADR covers it.
+  When triggered automatically, run the "proactive-check" operation below.
 ---
 
 # ADR Skill
@@ -24,6 +32,39 @@ ADR ファイルは `docs/adr/` に置かれる。操作前に必ず `docs/adr/R
 | `/adr new "タイトル"` | 新規 ADR を作成 |
 | `/adr supersede 0003 "新タイトル"` | 既存を差し替えて新規作成 |
 | `/adr delete 0003` | 差し替え済み ADR を削除 |
+
+---
+
+## 操作: proactive-check
+
+コード変更・コミット後にユーザーの指示なく自動実行する。
+
+### ステップ 1 — 変更内容の分類
+
+直前の実装・コミット内容を振り返り、以下の表で ADR 対応が必要かを判断する。
+
+| 変更の種類 | 対応 |
+|---|---|
+| 新しいライブラリ・依存追加 | 新規 ADR |
+| アルゴリズムの変更 | 新規 ADR（または既存を supersede）|
+| コアインターフェース（型定義）の変更 | 新規 ADR |
+| 公開 API の追加・変更・削除 | 新規 ADR |
+| 出力フォーマットの変更 | 新規 ADR |
+| 検出ヒューリスティックの変更 | 新規 ADR |
+| バグ修正（設計変更なし） | ADR 不要 |
+| テスト・ドキュメントのみの変更 | ADR 不要 |
+| 既存の決定範囲内でのリファクタリング | ADR 不要 |
+
+### ステップ 2 — 既存 ADR との照合
+
+`docs/adr/README.md` を読み、変更内容をカバーする ADR がすでに存在するか確認する。
+- 存在する → ADR 不要（コメントのみ）
+- 存在しない → ステップ 3 へ
+
+### ステップ 3 — ADR の作成または更新
+
+- 新しい設計決定 → 「操作: new」を実行する
+- 既存の決定を覆す変更 → 「操作: supersede」を実行する
 
 ---
 
