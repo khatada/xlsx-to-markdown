@@ -12,6 +12,7 @@
 | [0006](0006-multi-sheet-headings.md) | 複数シートがある場合に "## シート名" 見出しを自動挿入する | 採用済み |
 | [0007](0007-rich-text-handling.md) | リッチテキストはセルスタイルから読み取り、XMLパースは行わない | 採用済み |
 | [0008](0008-html-table-format.md) | テーブル出力形式を HTML に変更し colspan/rowspan を完全サポートする | 採用済み |
+| [0009](0009-linter-and-formatter.md) | リンターに oxlint、フォーマッターに oxfmt を採用する | 採用済み |
 
 ## ADR の形式
 
