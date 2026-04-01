@@ -13,9 +13,7 @@ docs/adr/
   README.md                          — ADR 一覧と索引
   0001-xlsx-parsing-library.md       — XLSX パースライブラリの選定
   0002-region-detection-algorithm.md — テーブル/段落の領域検出アルゴリズム
-  0003-markdown-table-format.md      — [差し替え済み → 0008] GFM テーブル出力形式
   0004-column-alignment-inference.md — 列アライメントの自動推論
-  0005-merged-cell-handling.md       — [差し替え済み → 0008] マージセルの扱い
   0006-multi-sheet-headings.md       — 複数シート時の見出し挿入
   0007-rich-text-handling.md         — リッチテキストの取得方法
   0008-html-table-format.md          — HTML テーブル出力と colspan/rowspan 対応
