@@ -1,9 +1,9 @@
-import type { ConvertOptions, ResolvedOptions } from './types.js';
+import type { ConvertOptions, ResolvedOptions } from "./types.js";
 
 export function resolveOptions(opts: ConvertOptions = {}): ResolvedOptions {
   return {
     sheets: opts.sheets,
-    sheetHeadings: opts.sheetHeadings ?? 'auto',
+    sheetHeadings: opts.sheetHeadings ?? "auto",
     headerRow: opts.headerRow ?? true,
     tableDetection: {
       minColumns: opts.tableDetection?.minColumns ?? 2,
@@ -11,8 +11,8 @@ export function resolveOptions(opts: ConvertOptions = {}): ResolvedOptions {
       useBorders: opts.tableDetection?.useBorders ?? true,
     },
     richText: opts.richText ?? true,
-    emptyCell: opts.emptyCell ?? '',
-    dateFormat: opts.dateFormat ?? 'YYYY-MM-DD',
+    emptyCell: opts.emptyCell ?? "",
+    dateFormat: opts.dateFormat ?? "YYYY-MM-DD",
     blankLinesBetweenRegions: opts.blankLinesBetweenRegions ?? 1,
   };
 }

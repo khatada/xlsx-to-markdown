@@ -1,9 +1,8 @@
-import * as XLSX from 'xlsx';
-import type { Region, ResolvedOptions, RowInfo, SheetResult } from './types.js';
-import { detectRegions } from './region-detector.js';
-import { renderTable } from './table-renderer.js';
-import { renderParagraph } from './paragraph-renderer.js';
-import { extractCellData } from './cell-formatter.js';
+import * as XLSX from "xlsx";
+import type { Region, ResolvedOptions, RowInfo, SheetResult } from "./types.js";
+import { detectRegions } from "./region-detector.js";
+import { renderTable } from "./table-renderer.js";
+import { renderParagraph } from "./paragraph-renderer.js";
 
 /**
  * Convert a single worksheet to Markdown.
@@ -14,13 +13,13 @@ export function convertSheet(
   sheetIndex: number,
   opts: ResolvedOptions,
 ): SheetResult {
-  const ref = ws['!ref'];
+  const ref = ws["!ref"];
   if (!ref) {
-    return { name: sheetName, index: sheetIndex, markdown: '', regions: [] };
+    return { name: sheetName, index: sheetIndex, markdown: "", regions: [] };
   }
 
   const range = XLSX.utils.decode_range(ref);
-  const merges: XLSX.Range[] = ws['!merges'] ?? [];
+  const merges: XLSX.Range[] = ws["!merges"] ?? [];
 
   // Build set of merged-child addresses once for row analysis
   const mergedChildCells = buildMergedChildSet(merges);
@@ -38,7 +37,7 @@ export function convertSheet(
       if (mergedChildCells.has(addr)) continue;
 
       const cell: XLSX.CellObject | undefined = ws[addr];
-      if (cell && cell.v !== undefined && cell.v !== null && cell.v !== '') {
+      if (cell && cell.v !== undefined && cell.v !== null && cell.v !== "") {
         filledCols.add(c);
         filledCount++;
         if (c < minCol) minCol = c;
@@ -59,18 +58,10 @@ export function convertSheet(
 
   // Render each region
   const regions: Region[] = rawRegions.map((raw) => {
-    let markdown = '';
+    let markdown = "";
 
-    if (raw.type === 'table') {
-      markdown = renderTable(
-        ws,
-        raw.startRow,
-        raw.endRow,
-        raw.startCol,
-        raw.endCol,
-        merges,
-        opts,
-      );
+    if (raw.type === "table") {
+      markdown = renderTable(ws, raw.startRow, raw.endRow, raw.startCol, raw.endCol, merges, opts);
     } else {
       markdown = renderParagraph(
         ws,
@@ -86,7 +77,7 @@ export function convertSheet(
     return { ...raw, markdown };
   });
 
-  const separator = '\n'.repeat(opts.blankLinesBetweenRegions + 1);
+  const separator = "\n".repeat(opts.blankLinesBetweenRegions + 1);
   const markdown = regions
     .map((r) => r.markdown)
     .filter(Boolean)
