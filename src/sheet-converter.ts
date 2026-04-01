@@ -31,6 +31,7 @@ export function convertSheet(
     let maxCol = -Infinity;
     let filledCount = 0;
     let hasBorder = false;
+    let hasVerticalBorder = false;
     const filledCols = new Set<number>();
 
     for (let c = range.s.c; c <= range.e.c; c++) {
@@ -46,13 +47,16 @@ export function convertSheet(
       }
 
       // Check for borders on any cell (including empty cells)
-      if (!hasBorder && cell) {
+      if (cell) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const style: any = (cell as any).s;
         if (style?.border) {
           const b = style.border;
           if (b.top?.style || b.bottom?.style || b.left?.style || b.right?.style) {
             hasBorder = true;
+          }
+          if (b.left?.style || b.right?.style) {
+            hasVerticalBorder = true;
           }
         }
       }
@@ -65,6 +69,7 @@ export function convertSheet(
       maxCol: maxCol === -Infinity ? -1 : maxCol,
       filledCount,
       hasBorder,
+      hasVerticalBorder,
     });
   }
 

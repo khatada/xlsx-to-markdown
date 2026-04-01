@@ -5,11 +5,24 @@ import { resolveOptions } from "../options.js";
 import { convertWorkbook } from "../index.js";
 import type { RowInfo } from "../types.js";
 
-function makeRowInfo(index: number, cols: number[], hasBorder = false): RowInfo {
+function makeRowInfo(
+  index: number,
+  cols: number[],
+  hasBorder = false,
+  hasVerticalBorder = false,
+): RowInfo {
   const filledCols = new Set(cols);
   const minCol = cols.length ? Math.min(...cols) : -1;
   const maxCol = cols.length ? Math.max(...cols) : -1;
-  return { index, filledCols, minCol, maxCol, filledCount: cols.length, hasBorder };
+  return {
+    index,
+    filledCols,
+    minCol,
+    maxCol,
+    filledCount: cols.length,
+    hasBorder,
+    hasVerticalBorder,
+  };
 }
 
 describe("detectRegions", () => {
@@ -107,13 +120,20 @@ describe("detectRegions", () => {
   describe("border-based table start detection (useBorders: true)", () => {
     const borderOpts = resolveOptions({ tableDetection: { useBorders: true } });
 
-    it("dense rows before first bordered row become a paragraph", () => {
-      // Row 0: title row — 3 filled cols, no border → should be paragraph
-      // Rows 1-2: table rows — bordered
+    // Helper: row with vertical borders (left/right) — indicates column structure
+    const vBorder = (index: number, cols: number[]) => makeRowInfo(index, cols, true, true);
+    // Helper: row with horizontal-only borders (top/bottom) — no column structure
+    const hBorder = (index: number, cols: number[]) => makeRowInfo(index, cols, true, false);
+    // Helper: row with no borders
+    const noBorder = (index: number, cols: number[]) => makeRowInfo(index, cols, false, false);
+
+    it("dense rows before first vertical-bordered row become a paragraph", () => {
+      // Row 0: title row — 3 filled cols, no vertical border → should be paragraph
+      // Rows 1-2: table rows — vertical borders
       const rows = [
-        makeRowInfo(0, [0, 1, 2], false), // dense but no border
-        makeRowInfo(1, [0, 1, 2], true), // table header (bordered)
-        makeRowInfo(2, [0, 1, 2], true), // table data (bordered)
+        noBorder(0, [0, 1, 2]), // dense but no vertical border
+        vBorder(1, [0, 1, 2]), // table header (vertical border)
+        vBorder(2, [0, 1, 2]), // table data (vertical border)
       ];
       const regions = detectRegions(rows, borderOpts);
       expect(regions).toHaveLength(2);
@@ -125,12 +145,12 @@ describe("detectRegions", () => {
       expect(regions[1].endRow).toBe(2);
     });
 
-    it("multiple leading non-bordered rows all become a single paragraph region", () => {
+    it("multiple leading rows without vertical borders become a single paragraph region", () => {
       const rows = [
-        makeRowInfo(0, [0, 1], false),
-        makeRowInfo(1, [0, 1], false),
-        makeRowInfo(2, [0, 1], true),
-        makeRowInfo(3, [0, 1], true),
+        noBorder(0, [0, 1]),
+        hBorder(1, [0, 1]), // horizontal-only border → still not a table start
+        vBorder(2, [0, 1]),
+        vBorder(3, [0, 1]),
       ];
       const regions = detectRegions(rows, borderOpts);
       expect(regions).toHaveLength(2);
@@ -141,12 +161,41 @@ describe("detectRegions", () => {
       expect(regions[1].startRow).toBe(2);
     });
 
-    it("falls back to density when no row has borders", () => {
-      // All rows without borders → density-based classification as before
+    it("sparse rows with vertical borders are treated as table rows", () => {
+      // Rows with only 1 filled col but vertical borders → part of the table
       const rows = [
-        makeRowInfo(0, [0], false), // sparse → paragraph
-        makeRowInfo(1, [0, 1], false), // dense
-        makeRowInfo(2, [0, 1], false), // dense → table (minRows satisfied)
+        vBorder(0, [0, 1]), // dense + vertical border → table header
+        vBorder(1, [0]), // sparse but vertical border → still table row
+        vBorder(2, [0, 1]), // dense + vertical border → table row
+      ];
+      const regions = detectRegions(rows, borderOpts);
+      expect(regions).toHaveLength(1);
+      expect(regions[0].type).toBe("table");
+      expect(regions[0].startRow).toBe(0);
+      expect(regions[0].endRow).toBe(2);
+    });
+
+    it("rows with only horizontal borders are not promoted to table rows by borders alone", () => {
+      // hBorder row is sparse AND has no vertical borders → paragraph
+      const rows = [
+        vBorder(0, [0, 1]),
+        vBorder(1, [0, 1]),
+        hBorder(2, [0]), // horizontal-only, sparse → paragraph
+      ];
+      const regions = detectRegions(rows, borderOpts);
+      expect(regions).toHaveLength(2);
+      expect(regions[0].type).toBe("table");
+      expect(regions[0].endRow).toBe(1);
+      expect(regions[1].type).toBe("paragraph");
+      expect(regions[1].startRow).toBe(2);
+    });
+
+    it("falls back to density when no row has vertical borders", () => {
+      // All rows without vertical borders → density-based classification as before
+      const rows = [
+        noBorder(0, [0]), // sparse → paragraph
+        noBorder(1, [0, 1]), // dense
+        noBorder(2, [0, 1]), // dense → table (minRows satisfied)
       ];
       const regions = detectRegions(rows, borderOpts);
       expect(regions[0].type).toBe("paragraph");
@@ -156,9 +205,9 @@ describe("detectRegions", () => {
     it("when useBorders is false, leading dense rows are classified as table", () => {
       const noBorderOpts = resolveOptions({ tableDetection: { useBorders: false } });
       const rows = [
-        makeRowInfo(0, [0, 1, 2], false),
-        makeRowInfo(1, [0, 1, 2], true),
-        makeRowInfo(2, [0, 1, 2], true),
+        noBorder(0, [0, 1, 2]),
+        vBorder(1, [0, 1, 2]),
+        vBorder(2, [0, 1, 2]),
       ];
       const regions = detectRegions(rows, noBorderOpts);
       expect(regions).toHaveLength(1);

@@ -84,11 +84,15 @@ function detectInRange(
  * Classify a band of rows (no empty rows) within a fixed column range into
  * table and paragraph regions based on row density.
  *
- * When useBorders is enabled: if the band contains bordered rows, all rows
- * before the first bordered row are treated as paragraphs regardless of
- * density.  This lets a caption/title row that sits directly above a table
- * (no blank-row separator) be correctly classified as a paragraph even when
- * it has many filled columns.
+ * When useBorders is enabled two extra rules apply:
+ * 1. Table-start boundary: all rows before the first row that has a vertical
+ *    border (left or right) are emitted as paragraphs, regardless of density.
+ *    This lets a caption/title row sitting directly above a bordered table
+ *    be correctly classified as a paragraph even when it is "dense".
+ * 2. Table-row criterion: within the density loop, a row is treated as a
+ *    table-candidate when it has vertical borders, even if its filled-column
+ *    count is below minColumns.  This ensures that rows with only vertical
+ *    cell borders (no horizontal borders) are still included in the table.
  */
 function classifyBand(
   band: RowInfo[],
@@ -100,12 +104,13 @@ function classifyBand(
   const regions: RawRegion[] = [];
   let i = 0;
 
-  // Border-based table-start detection: emit leading non-bordered rows as
-  // paragraphs so that the table starts at the first bordered row.
+  // Border-based table-start detection: emit leading rows without vertical
+  // borders as paragraphs so that the table starts at the first row that has
+  // vertical (column-structure) borders.
   if (useBorders) {
-    const firstBorderIdx = band.findIndex((r) => r.hasBorder);
-    if (firstBorderIdx > 0) {
-      const paraRows = band.slice(0, firstBorderIdx);
+    const firstVerticalBorderIdx = band.findIndex((r) => r.hasVerticalBorder);
+    if (firstVerticalBorderIdx > 0) {
+      const paraRows = band.slice(0, firstVerticalBorderIdx);
       regions.push({
         type: "paragraph",
         startRow: paraRows[0].index,
@@ -113,18 +118,24 @@ function classifyBand(
         startCol: colStart,
         endCol: colEnd,
       });
-      i = firstBorderIdx;
+      i = firstVerticalBorderIdx;
     }
   }
 
-  while (i < band.length) {
-    const filled = countInRange(band[i].filledCols, colStart, colEnd);
+  // Helper: is this row a table candidate?
+  // When useBorders is on, vertical borders are sufficient even without density.
+  const isTableCandidate = (row: RowInfo): boolean => {
+    if (countInRange(row.filledCols, colStart, colEnd) >= minColumns) return true;
+    if (useBorders && row.hasVerticalBorder) return true;
+    return false;
+  };
 
-    if (filled >= minColumns) {
-      // Dense row — try to extend a table downward
+  while (i < band.length) {
+    if (isTableCandidate(band[i])) {
+      // Table candidate row — try to extend a table downward
       const tableRows: RowInfo[] = [band[i]];
       let j = i + 1;
-      while (j < band.length && countInRange(band[j].filledCols, colStart, colEnd) >= minColumns) {
+      while (j < band.length && isTableCandidate(band[j])) {
         tableRows.push(band[j]);
         j++;
       }
@@ -138,7 +149,7 @@ function classifyBand(
           endCol: colEnd,
         });
       } else {
-        // Below minRows → demote each dense row to its own paragraph
+        // Below minRows → demote each row to its own paragraph
         for (const r of tableRows) {
           regions.push({
             type: "paragraph",
@@ -151,10 +162,10 @@ function classifyBand(
       }
       i = j;
     } else {
-      // Sparse rows → paragraph
+      // Non-candidate rows → paragraph
       const paraRows: RowInfo[] = [band[i]];
       let j = i + 1;
-      while (j < band.length && countInRange(band[j].filledCols, colStart, colEnd) < minColumns) {
+      while (j < band.length && !isTableCandidate(band[j])) {
         paraRows.push(band[j]);
         j++;
       }
