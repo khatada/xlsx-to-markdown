@@ -85,14 +85,6 @@ ADR ファイルは `docs/adr/` に置かれる。操作前に必ず `docs/adr/R
 | [NNNN](NNNN-filename.md) | タイトル | 採用済み |
 ```
 
-### ステップ 4 — CLAUDE.md 更新
-
-`CLAUDE.md` の ADR ファイル一覧ブロックに以下の行を追記する:
-
-```
-  NNNN-filename.md          — タイトルの一言説明
-```
-
 ---
 
 ## 操作: supersede <旧番号> <新タイトル>
@@ -116,11 +108,10 @@ ADR ファイルは `docs/adr/` に置かれる。操作前に必ず `docs/adr/R
 [ADR-旧番号](旧ファイル名.md) で〇〇を採用したが、△△という理由で変更が必要になった。
 ```
 
-### ステップ 3 — インデックスと CLAUDE.md 更新
+### ステップ 3 — インデックス更新
 
-- `docs/adr/README.md`: 旧番号行のステータスを「差し替え済み (by NNNN)」に更新し、
-  新番号行を追加する
-- `CLAUDE.md`: 旧番号行を `[差し替え済み → NNNN]` 付きに更新し、新番号行を追加する
+`docs/adr/README.md` の旧番号行のステータスを「差し替え済み (by NNNN)」に更新し、
+新番号行を追加する。
 
 ---
 
@@ -139,8 +130,7 @@ ADR ファイルは `docs/adr/` に置かれる。操作前に必ず `docs/adr/R
 
 ### ステップ 3 — インデックス更新
 
-- `docs/adr/README.md`: 該当行を削除する
-- `CLAUDE.md`: 該当行を削除する
+`docs/adr/README.md` から該当行を削除する。
 
 ---
 
@@ -148,5 +138,6 @@ ADR ファイルは `docs/adr/` に置かれる。操作前に必ず `docs/adr/R
 
 - 操作後は必ず変更ファイルを git commit する（メッセージ例: `docs: add ADR-NNNN ...`）
 - コミット後に push するかどうかはユーザーに確認する
+- ADR の一覧・ステータスの正は `docs/adr/README.md` のみ。CLAUDE.md には ADR インデックスを記載しない
 - ADR の内容を勝手に書きすぎない。コンテキストが不明な場合はユーザーに質問する
 - タイトルの kebab-case 変換: 日本語タイトルは英語に意訳してから変換する

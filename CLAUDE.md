@@ -6,18 +6,8 @@
 
 ### 参照
 
-設計・実装を行う前に、関連する ADR を必ず確認してください。
-
-```
-docs/adr/
-  README.md                          — ADR 一覧と索引
-  0001-xlsx-parsing-library.md       — XLSX パースライブラリの選定
-  0002-region-detection-algorithm.md — テーブル/段落の領域検出アルゴリズム
-  0004-column-alignment-inference.md — 列アライメントの自動推論
-  0006-multi-sheet-headings.md       — 複数シート時の見出し挿入
-  0007-rich-text-handling.md         — リッチテキストの取得方法
-  0008-html-table-format.md          — HTML テーブル出力と colspan/rowspan 対応
-```
+設計・実装を行う前に `docs/adr/README.md` を読んで現行の決定事項を確認してください。
+ADR の一覧・ステータスは `docs/adr/README.md` が唯一の正とします。
 
 ### 更新ルール
 
@@ -56,7 +46,7 @@ docs/adr/
 <!-- この決定によって生じるトレードオフ・制約・将来の改善点 -->
 ```
 
-4. `docs/adr/README.md` の一覧テーブルに追記する
+4. `docs/adr/README.md` の一覧テーブルに追記する（CLAUDE.md への追記は不要）
 
 ## 開発コマンド
 
@@ -91,7 +81,7 @@ src/
 
 ### 重要な設計ポイント
 
-- **テーブルは HTML 出力**: `<table>`/`<thead>`/`<tbody>` + colspan/rowspan（ADR-0008）
-- **段落は Markdown 出力**: プレーンテキスト + `**bold**`, `_italic_` 記法（ADR-0007）
+- **テーブルは HTML 出力**: `<table>`/`<thead>`/`<tbody>` + colspan/rowspan（詳細: `docs/adr/`）
+- **段落は Markdown 出力**: プレーンテキスト + `**bold**`, `_italic_` 記法
 - **rawValue と value の分離**: `CellData.rawValue` は HTML エスケープ前の生テキスト、`CellData.value` は Markdown 書式適用済みテキスト。テーブルレンダラーは `rawValue` を使い HTML タグを適用する
-- **領域検出の閾値**: `minColumns`（デフォルト 2）以上のセルが `minRows`（デフォルト 2）行以上連続する矩形をテーブルとみなす（ADR-0002）
+- **領域検出の閾値**: `minColumns`（デフォルト 2）以上のセルが `minRows`（デフォルト 2）行以上連続する矩形をテーブルとみなす
