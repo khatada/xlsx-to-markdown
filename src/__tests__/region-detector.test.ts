@@ -253,4 +253,66 @@ describe("detectRegions", () => {
     expect(sheets[0].markdown).toContain("Name");
     expect(sheets[0].markdown).toContain("Item");
   });
+
+  describe("issue 1: hidden rows and columns are excluded", () => {
+    it("hidden rows are not included in region detection", () => {
+      const wb = XLSX.utils.book_new();
+      const ws: XLSX.WorkSheet = {
+        "!ref": "A1:B3",
+        A1: { t: "s", v: "H1" },
+        B1: { t: "s", v: "H2" },
+        A2: { t: "s", v: "secret" },
+        B2: { t: "s", v: "data" },
+        A3: { t: "s", v: "R3" },
+        B3: { t: "s", v: "R3" },
+        "!rows": [undefined, { hidden: true }] as XLSX.RowInfo[],
+      };
+      XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+      const { sheets } = convertWorkbook(wb);
+      expect(sheets[0].markdown).not.toContain("secret");
+      expect(sheets[0].markdown).toContain("R3");
+    });
+
+    it("hidden columns are not included in region detection", () => {
+      const wb = XLSX.utils.book_new();
+      const ws: XLSX.WorkSheet = {
+        "!ref": "A1:C2",
+        A1: { t: "s", v: "Visible" },
+        B1: { t: "s", v: "Hidden" },
+        C1: { t: "s", v: "Also visible" },
+        A2: { t: "s", v: "v1" },
+        B2: { t: "s", v: "h1" },
+        C2: { t: "s", v: "v2" },
+        "!cols": [undefined, { hidden: true }] as XLSX.ColInfo[],
+      };
+      XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+      const { sheets } = convertWorkbook(wb);
+      expect(sheets[0].markdown).not.toContain("Hidden");
+      expect(sheets[0].markdown).toContain("Visible");
+    });
+  });
+
+  describe("issue 6: horizontally merged cells count all spanned columns for density", () => {
+    it("a master cell spanning 3 cols satisfies minColumns=2", () => {
+      const wb = XLSX.utils.book_new();
+      // Row 0: title merged across A:C (master A1, children B1 C1)
+      // Rows 1-2: table data in A:C
+      const ws: XLSX.WorkSheet = {
+        "!ref": "A1:C3",
+        A1: { t: "s", v: "Title spanning 3 cols" },
+        A2: { t: "s", v: "r1c1" },
+        B2: { t: "s", v: "r1c2" },
+        C2: { t: "s", v: "r1c3" },
+        A3: { t: "s", v: "r2c1" },
+        B3: { t: "s", v: "r2c2" },
+        C3: { t: "s", v: "r2c3" },
+        "!merges": [{ s: { r: 0, c: 0 }, e: { r: 0, c: 2 } }],
+      };
+      XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+      const { sheets } = convertWorkbook(wb);
+      // Title row should be dense (3 spanned cols >= minColumns=2) → table or paragraph
+      // but crucially it should appear in the output
+      expect(sheets[0].markdown).toContain("Title spanning 3 cols");
+    });
+  });
 });

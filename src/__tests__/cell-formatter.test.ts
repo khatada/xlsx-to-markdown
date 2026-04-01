@@ -96,6 +96,40 @@ describe("extractCellData", () => {
     });
   });
 
+  describe("issue 4: HYPERLINK formula", () => {
+    it("extracts URL from =HYPERLINK(url, text) formula when cell.l is absent", () => {
+      const cell = makeCell({
+        t: "s",
+        v: "Click here",
+        f: 'HYPERLINK("https://example.com","Click here")',
+        w: "Click here",
+      });
+      const data = extractCellData(cell, noMerges, "A1", opts);
+      expect(data.value).toBe("[Click here](https://example.com)");
+    });
+
+    it("extracts URL from =HYPERLINK(url) formula (single argument)", () => {
+      const cell = makeCell({
+        t: "s",
+        v: "https://example.com",
+        f: 'HYPERLINK("https://example.com")',
+      });
+      const data = extractCellData(cell, noMerges, "A1", opts);
+      expect(data.value).toBe("[https://example.com](https://example.com)");
+    });
+
+    it("cell.l takes precedence over HYPERLINK formula", () => {
+      const cell = makeCell({
+        t: "s",
+        v: "link",
+        f: 'HYPERLINK("https://formula.example.com","link")',
+        l: { Target: "https://cell-l.example.com" },
+      } as Partial<XLSX.CellObject>);
+      const data = extractCellData(cell, noMerges, "A1", opts);
+      expect(data.value).toContain("https://cell-l.example.com");
+    });
+  });
+
   describe("merge detection", () => {
     it("marks child merged cells as isMergedChild", () => {
       const mergedChildren = new Set(["B1", "C1"]);

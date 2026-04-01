@@ -21,29 +21,74 @@ export function convertSheet(
   const range = XLSX.utils.decode_range(ref);
   const merges: XLSX.Range[] = ws["!merges"] ?? [];
 
-  // Build set of merged-child addresses once for row analysis
-  const mergedChildCells = buildMergedChildSet(merges);
+  const mergedCellInfo = buildMergedCellInfo(merges);
+
+  // Issue 1: Build sets of hidden row/column indices for use in detection and rendering
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rowsConfig: any[] = (ws["!rows"] as any) ?? [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const colsConfig: any[] = (ws["!cols"] as any) ?? [];
+  const hiddenRows = new Set<number>();
+  const hiddenCols = new Set<number>();
+  for (let r = range.s.r; r <= range.e.r; r++) {
+    if (rowsConfig[r]?.hidden) hiddenRows.add(r);
+  }
+  for (let c = range.s.c; c <= range.e.c; c++) {
+    if (colsConfig[c]?.hidden) hiddenCols.add(c);
+  }
 
   // Collect RowInfo for each row in the sheet
   const rowInfos: RowInfo[] = [];
   for (let r = range.s.r; r <= range.e.r; r++) {
-    let minCol = Infinity;
-    let maxCol = -Infinity;
+    if (hiddenRows.has(r)) continue; // Issue 1: skip hidden rows
+
     let filledCount = 0;
     let hasBorder = false;
     let hasVerticalBorder = false;
     const filledCols = new Set<number>();
 
     for (let c = range.s.c; c <= range.e.c; c++) {
+      if (hiddenCols.has(c)) continue; // Issue 1: skip hidden columns
+
       const addr = XLSX.utils.encode_cell({ r, c });
-      if (mergedChildCells.has(addr)) continue;
+
+      if (mergedCellInfo.childCells.has(addr)) {
+        // Issue 2: check master cell's borders for this merged child
+        if (!hasBorder || !hasVerticalBorder) {
+          const masterAddr = mergedCellInfo.childToMaster.get(addr);
+          if (masterAddr) {
+            const masterCell: XLSX.CellObject | undefined = ws[masterAddr];
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const style: any = (masterCell as any)?.s;
+            if (style?.border) {
+              const b = style.border;
+              if (b.top?.style || b.bottom?.style || b.left?.style || b.right?.style) {
+                hasBorder = true;
+              }
+              if (b.left?.style || b.right?.style) {
+                hasVerticalBorder = true;
+              }
+            }
+          }
+        }
+        continue;
+      }
 
       const cell: XLSX.CellObject | undefined = ws[addr];
       if (cell && cell.v !== undefined && cell.v !== null && cell.v !== "") {
         filledCols.add(c);
         filledCount++;
-        if (c < minCol) minCol = c;
-        if (c > maxCol) maxCol = c;
+
+        // Issue 6: for horizontally merged master cells, count all spanned
+        // columns so that density reflects the visual column footprint
+        const colEnd = mergedCellInfo.masterColEnd.get(addr);
+        if (colEnd !== undefined) {
+          for (let sc = c + 1; sc <= colEnd; sc++) {
+            if (hiddenCols.has(sc)) continue; // Issue 1
+            filledCols.add(sc);
+            filledCount++;
+          }
+        }
       }
 
       // Check for borders on any cell (including empty cells)
@@ -65,8 +110,8 @@ export function convertSheet(
     rowInfos.push({
       index: r,
       filledCols,
-      minCol: minCol === Infinity ? -1 : minCol,
-      maxCol: maxCol === -Infinity ? -1 : maxCol,
+      minCol: filledCols.size > 0 ? Math.min(...filledCols) : -1,
+      maxCol: filledCols.size > 0 ? Math.max(...filledCols) : -1,
       filledCount,
       hasBorder,
       hasVerticalBorder,
@@ -80,7 +125,17 @@ export function convertSheet(
     let markdown = "";
 
     if (raw.type === "table") {
-      markdown = renderTable(ws, raw.startRow, raw.endRow, raw.startCol, raw.endCol, merges, opts);
+      markdown = renderTable(
+        ws,
+        raw.startRow,
+        raw.endRow,
+        raw.startCol,
+        raw.endCol,
+        merges,
+        opts,
+        hiddenRows,
+        hiddenCols,
+      );
     } else {
       markdown = renderParagraph(
         ws,
@@ -90,6 +145,8 @@ export function convertSheet(
         raw.endCol,
         merges,
         opts,
+        hiddenRows,
+        hiddenCols,
       );
     }
 
@@ -105,15 +162,36 @@ export function convertSheet(
   return { name: sheetName, index: sheetIndex, markdown, regions };
 }
 
-function buildMergedChildSet(merges: XLSX.Range[]): Set<string> {
-  const set = new Set<string>();
+interface MergedCellInfo {
+  /** Addresses of merged child cells (not the master) */
+  childCells: Set<string>;
+  /** Maps child cell address → master cell address */
+  childToMaster: Map<string, string>;
+  /** Maps master cell address → end column index (only for horizontal spans) */
+  masterColEnd: Map<string, number>;
+}
+
+function buildMergedCellInfo(merges: XLSX.Range[]): MergedCellInfo {
+  const childCells = new Set<string>();
+  const childToMaster = new Map<string, string>();
+  const masterColEnd = new Map<string, number>();
+
   for (const m of merges) {
+    const masterAddr = XLSX.utils.encode_cell({ r: m.s.r, c: m.s.c });
+
+    if (m.e.c > m.s.c) {
+      masterColEnd.set(masterAddr, m.e.c);
+    }
+
     for (let r = m.s.r; r <= m.e.r; r++) {
       for (let c = m.s.c; c <= m.e.c; c++) {
         if (r === m.s.r && c === m.s.c) continue;
-        set.add(XLSX.utils.encode_cell({ r, c }));
+        const childAddr = XLSX.utils.encode_cell({ r, c });
+        childCells.add(childAddr);
+        childToMaster.set(childAddr, masterAddr);
       }
     }
   }
-  return set;
+
+  return { childCells, childToMaster, masterColEnd };
 }
