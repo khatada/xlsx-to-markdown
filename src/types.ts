@@ -132,7 +132,15 @@ export interface ConvertResult {
  * Represents a single parsed cell value (after formatting).
  */
 export interface CellData {
-  /** Display value as a string */
+  /**
+   * Plain text value with no inline formatting applied.
+   * Used by renderers that handle their own markup (e.g. HTML table renderer).
+   */
+  rawValue: string;
+  /**
+   * Markdown-formatted value (bold → **, italic → _, hyperlink → [text](url)).
+   * Used by the paragraph renderer.
+   */
   value: string;
   /** Whether the cell has a bold format */
   bold: boolean;
