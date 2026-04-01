@@ -13,11 +13,12 @@ docs/adr/
   README.md                          — ADR 一覧と索引
   0001-xlsx-parsing-library.md       — XLSX パースライブラリの選定
   0002-region-detection-algorithm.md — テーブル/段落の領域検出アルゴリズム
-  0003-markdown-table-format.md      — Markdown テーブル出力形式
+  0003-markdown-table-format.md      — [差し替え済み → 0008] GFM テーブル出力形式
   0004-column-alignment-inference.md — 列アライメントの自動推論
-  0005-merged-cell-handling.md       — マージセルの扱い
+  0005-merged-cell-handling.md       — [差し替え済み → 0008] マージセルの扱い
   0006-multi-sheet-headings.md       — 複数シート時の見出し挿入
   0007-rich-text-handling.md         — リッチテキストの取得方法
+  0008-html-table-format.md          — HTML テーブル出力と colspan/rowspan 対応
 ```
 
 ### 更新ルール
@@ -73,3 +74,26 @@ npm run test:watch  # ウォッチモードでテスト
 - 公開 API の型は `src/types.ts` に集約する
 - テストは `src/__tests__/` に配置し、ファイル名は `*.test.ts`
 - 新機能を追加する際は対応するテストも追加する
+
+## 現在のアーキテクチャ概要
+
+```
+src/
+  types.ts              — 全型定義 (ConvertOptions, CellData, Region など)
+  options.ts            — デフォルト値を埋めてオプションを確定
+  cell-formatter.ts     — セル値の抽出・書式変換
+                          rawValue: 生テキスト（HTMLレンダラーが使用）
+                          value:    Markdown書式付き（段落レンダラーが使用）
+  region-detector.ts    — 行密度スキャンによるテーブル/段落の領域検出
+  table-renderer.ts     — HTML テーブル出力 (colspan/rowspan 対応)
+  paragraph-renderer.ts — Markdown 段落出力
+  sheet-converter.ts    — シート全体の変換オーケストレーション
+  index.ts              — 公開 API
+```
+
+### 重要な設計ポイント
+
+- **テーブルは HTML 出力**: `<table>`/`<thead>`/`<tbody>` + colspan/rowspan（ADR-0008）
+- **段落は Markdown 出力**: プレーンテキスト + `**bold**`, `_italic_` 記法（ADR-0007）
+- **rawValue と value の分離**: `CellData.rawValue` は HTML エスケープ前の生テキスト、`CellData.value` は Markdown 書式適用済みテキスト。テーブルレンダラーは `rawValue` を使い HTML タグを適用する
+- **領域検出の閾値**: `minColumns`（デフォルト 2）以上のセルが `minRows`（デフォルト 2）行以上連続する矩形をテーブルとみなす（ADR-0002）
