@@ -2,7 +2,7 @@
 
 ## ステータス
 
-採用済み
+差し替え済み (by [ADR-0010](0010-recursive-region-detection.md))
 
 ## コンテキスト
 

@@ -136,16 +136,19 @@ describe("table rendering (HTML)", () => {
   });
 
   it("uses emptyCell placeholder for empty table cells", () => {
+    // Use 3 columns so rows with one empty cell still meet minColumns=2
     const wb = buildWorkbook([
       {
         name: "Sheet1",
         data: [
-          ["A", "B"],
-          ["val", undefined],
+          ["A", "B", "C"],
+          ["val", undefined, "x"],
+          ["foo", undefined, "y"],
         ],
       },
     ]);
     const { markdown } = convertWorkbook(wb, { emptyCell: "—" });
+    // The empty B column cells should show the placeholder
     expect(markdown).toContain("<td>—</td>");
   });
 
