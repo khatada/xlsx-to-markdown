@@ -14,6 +14,7 @@
 | [0007](0007-rich-text-handling.md) | リッチテキストはセルスタイルから読み取り、XMLパースは行わない | 採用済み |
 | [0008](0008-html-table-format.md) | テーブル出力形式を HTML に変更し colspan/rowspan を完全サポートする | 採用済み |
 | [0009](0009-linter-and-formatter.md) | リンターに oxlint、フォーマッターに oxfmt を採用する | 採用済み |
+| [0011](0011-border-based-table-boundary-detection.md) | 縦罫線（左右）を表境界検出の主要シグナルとして使用する | 採用済み |
 
 ## ADR の形式
 
