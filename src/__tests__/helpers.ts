@@ -1,4 +1,4 @@
-import * as XLSX from 'xlsx';
+import * as XLSX from "xlsx";
 
 /**
  * Build a simple WorkBook from a 2-D array of cell values.
@@ -22,8 +22,8 @@ export function buildWorkbook(
  */
 export function normalise(md: string): string {
   return md
-    .split('\n')
+    .split("\n")
     .map((l) => l.trimEnd())
-    .join('\n')
+    .join("\n")
     .trim();
 }

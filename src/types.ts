@@ -74,7 +74,7 @@ export interface ConvertOptions {
  */
 export interface ResolvedOptions {
   sheets?: (string | number)[];
-  sheetHeadings: boolean | 'auto';
+  sheetHeadings: boolean | "auto";
   headerRow: boolean;
   tableDetection: {
     minColumns: number;
@@ -90,7 +90,7 @@ export interface ResolvedOptions {
 /**
  * Type of a detected region within a sheet.
  */
-export type RegionType = 'table' | 'paragraph' | 'heading';
+export type RegionType = "table" | "paragraph" | "heading";
 
 /**
  * A detected content region in a sheet.
@@ -149,7 +149,7 @@ export interface CellData {
   /** Hyperlink URL, if any */
   hyperlink?: string;
   /** Horizontal alignment */
-  alignment?: 'left' | 'center' | 'right';
+  alignment?: "left" | "center" | "right";
   /** True when this cell is part of a merge but is not the top-left "master" cell */
   isMergedChild: boolean;
   /** True when this cell has any border (used for table detection) */

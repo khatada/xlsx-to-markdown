@@ -1,6 +1,6 @@
-import * as XLSX from 'xlsx';
-import type { ResolvedOptions } from './types.js';
-import { extractCellData } from './cell-formatter.js';
+import * as XLSX from "xlsx";
+import type { ResolvedOptions } from "./types.js";
+import { extractCellData } from "./cell-formatter.js";
 
 /**
  * Render a paragraph region as a Markdown paragraph.
@@ -36,11 +36,11 @@ export function renderParagraph(
       }
     }
     if (parts.length > 0) {
-      lines.push(parts.join(' '));
+      lines.push(parts.join(" "));
     }
   }
 
-  return lines.join('\n\n');
+  return lines.join("\n\n");
 }
 
 function buildMergedChildSet(merges: XLSX.Range[]): Set<string> {

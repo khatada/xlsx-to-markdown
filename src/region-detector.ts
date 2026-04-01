@@ -1,4 +1,4 @@
-import type { RowInfo, RegionType, ResolvedOptions } from './types.js';
+import type { RowInfo, RegionType, ResolvedOptions } from "./types.js";
 
 export interface RawRegion {
   type: RegionType;
@@ -55,7 +55,7 @@ export function detectRegions(rows: RowInfo[], opts: ResolvedOptions): RawRegion
         // so that two unrelated narrow tables don't merge.
         const overlap =
           next.minCol <= maxCol + 1 && // not too far right
-          next.maxCol >= minCol - 1;   // not too far left
+          next.maxCol >= minCol - 1; // not too far left
 
         if (!overlap) break;
 
@@ -67,7 +67,7 @@ export function detectRegions(rows: RowInfo[], opts: ResolvedOptions): RawRegion
 
       if (tableRows.length >= minRows) {
         regions.push({
-          type: 'table',
+          type: "table",
           startRow: tableRows[0].index,
           endRow: tableRows[tableRows.length - 1].index,
           startCol: minCol,
@@ -100,7 +100,7 @@ export function detectRegions(rows: RowInfo[], opts: ResolvedOptions): RawRegion
       }
 
       regions.push({
-        type: 'paragraph',
+        type: "paragraph",
         startRow: paraRows[0].index,
         endRow: paraRows[paraRows.length - 1].index,
         startCol: minCol,
@@ -115,7 +115,7 @@ export function detectRegions(rows: RowInfo[], opts: ResolvedOptions): RawRegion
 
 function makeParagraph(row: RowInfo): RawRegion {
   return {
-    type: 'paragraph',
+    type: "paragraph",
     startRow: row.index,
     endRow: row.index,
     startCol: row.minCol,

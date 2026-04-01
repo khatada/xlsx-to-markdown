@@ -1,6 +1,6 @@
-import * as XLSX from 'xlsx';
-import type { CellData, ResolvedOptions } from './types.js';
-import { extractCellData, escapeHtml } from './cell-formatter.js';
+import * as XLSX from "xlsx";
+import type { CellData, ResolvedOptions } from "./types.js";
+import { extractCellData, escapeHtml } from "./cell-formatter.js";
 
 interface MergeSpan {
   colspan: number;
@@ -28,8 +28,8 @@ export function renderTable(
   opts: ResolvedOptions,
 ): string {
   // Build merge maps for cells inside this table region
-  const mergeSpanMap = new Map<string, MergeSpan>();  // master address → span
-  const mergeChildSet = new Set<string>();             // child addresses to skip
+  const mergeSpanMap = new Map<string, MergeSpan>(); // master address → span
+  const mergeChildSet = new Set<string>(); // child addresses to skip
 
   for (const m of merges) {
     // Only handle merges whose master cell is inside the table region
@@ -49,36 +49,49 @@ export function renderTable(
   }
 
   // Infer column alignments from data rows
-  const colCount = endCol - startCol + 1;
   const alignments = inferColumnAlignments(
-    ws, startRow, endRow, startCol, endCol, mergeChildSet, opts,
+    ws,
+    startRow,
+    endRow,
+    startCol,
+    endCol,
+    mergeChildSet,
+    opts,
   );
 
-  const lines: string[] = ['<table>'];
+  const lines: string[] = ["<table>"];
 
   // --- <thead> ---
   if (opts.headerRow) {
-    lines.push('  <thead>');
-    lines.push(renderHtmlRow(
-      ws, startRow, startCol, endCol,
-      mergeSpanMap, mergeChildSet, alignments, opts, 'th',
-    ));
-    lines.push('  </thead>');
+    lines.push("  <thead>");
+    lines.push(
+      renderHtmlRow(
+        ws,
+        startRow,
+        startCol,
+        endCol,
+        mergeSpanMap,
+        mergeChildSet,
+        alignments,
+        opts,
+        "th",
+      ),
+    );
+    lines.push("  </thead>");
   }
 
   // --- <tbody> ---
-  lines.push('  <tbody>');
+  lines.push("  <tbody>");
   const dataStartRow = opts.headerRow ? startRow + 1 : startRow;
   for (let r = dataStartRow; r <= endRow; r++) {
-    lines.push(renderHtmlRow(
-      ws, r, startCol, endCol,
-      mergeSpanMap, mergeChildSet, alignments, opts, 'td',
-    ));
+    lines.push(
+      renderHtmlRow(ws, r, startCol, endCol, mergeSpanMap, mergeChildSet, alignments, opts, "td"),
+    );
   }
-  lines.push('  </tbody>');
-  lines.push('</table>');
+  lines.push("  </tbody>");
+  lines.push("</table>");
 
-  return lines.join('\n');
+  return lines.join("\n");
 }
 
 // ---------------------------------------------------------------------------
@@ -92,9 +105,9 @@ function renderHtmlRow(
   endCol: number,
   mergeSpanMap: Map<string, MergeSpan>,
   mergeChildSet: Set<string>,
-  alignments: ('left' | 'center' | 'right')[],
+  alignments: ("left" | "center" | "right")[],
   opts: ResolvedOptions,
-  tag: 'th' | 'td',
+  tag: "th" | "td",
 ): string {
   const cells: string[] = [];
 
@@ -120,16 +133,16 @@ function renderHtmlRow(
     const explicitAlign = data.alignment;
     const colAlign = alignments[c - startCol];
     const align = explicitAlign ?? colAlign;
-    if (align && align !== 'left') {
+    if (align && align !== "left") {
       attrs.push(`style="text-align: ${align}"`);
     }
 
-    const attrStr = attrs.length > 0 ? ` ${attrs.join(' ')}` : '';
+    const attrStr = attrs.length > 0 ? ` ${attrs.join(" ")}` : "";
     const content = formatCellHtml(data, opts);
     cells.push(`    <${tag}${attrStr}>${content}</${tag}>`);
   }
 
-  return `    <tr>\n${cells.join('\n')}\n    </tr>`;
+  return `    <tr>\n${cells.join("\n")}\n    </tr>`;
 }
 
 /**
@@ -139,9 +152,9 @@ function renderHtmlRow(
 function formatCellHtml(data: CellData, opts: ResolvedOptions): string {
   let val = escapeHtml(data.rawValue);
   // Newlines inside cells → <br>
-  val = val.replace(/\n/g, '<br>');
+  val = val.replace(/\n/g, "<br>");
 
-  if (!val) return opts.emptyCell ? escapeHtml(opts.emptyCell) : '';
+  if (!val) return opts.emptyCell ? escapeHtml(opts.emptyCell) : "";
   if (!opts.richText) return val;
 
   // Apply HTML inline formatting
@@ -166,14 +179,14 @@ function inferColumnAlignments(
   endCol: number,
   mergeChildSet: Set<string>,
   opts: ResolvedOptions,
-): ('left' | 'center' | 'right')[] {
+): ("left" | "center" | "right")[] {
   const dataStartRow = opts.headerRow ? startRow + 1 : startRow;
   const colCount = endCol - startCol + 1;
-  const result: ('left' | 'center' | 'right')[] = [];
+  const result: ("left" | "center" | "right")[] = [];
 
   for (let ci = 0; ci < colCount; ci++) {
     const c = startCol + ci;
-    let explicit: 'left' | 'center' | 'right' | undefined;
+    let explicit: "left" | "center" | "right" | undefined;
     let hasValue = false;
     let allNumeric = true;
 
@@ -196,7 +209,7 @@ function inferColumnAlignments(
     if (explicit) {
       result.push(explicit);
     } else {
-      result.push(hasValue && allNumeric ? 'right' : 'left');
+      result.push(hasValue && allNumeric ? "right" : "left");
     }
   }
 
