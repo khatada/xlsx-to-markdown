@@ -141,21 +141,24 @@ Section 1: Introduction
 
 ## Rich Text
 
-When `richText: true` (default), cell formatting is converted to inline Markdown:
+When `richText: true` (default), cell formatting is converted:
 
-| Excel format | Markdown output |
-| --- | --- |
-| Bold | `**text**` |
-| Italic | `_text_` |
-| Bold + Italic | `***text***` |
-| Hyperlink | `[text](url)` |
+| Excel format | Table output (HTML) | Paragraph output (Markdown) |
+| --- | --- | --- |
+| Bold | `<strong>text</strong>` | `**text**` |
+| Italic | `<em>text</em>` | `_text_` |
+| Bold + Italic | `<strong><em>text</em></strong>` | `***text***` |
+| Hyperlink | `<a href="url">text</a>` | `[text](url)` |
 
 ## Table Formatting Details
 
-- **Column alignment** — columns whose data cells are all numeric are automatically right-aligned (`---:`). Explicit cell alignment (left/center/right) takes precedence.
-- **Merged cells** — the top-left master cell keeps its content; other cells in the merge group are rendered empty.
-- **Newlines within cells** — converted to `<br>` inside table cells.
-- **Pipe characters** — `|` inside cell values is escaped as `\|`.
+Tables are output as HTML (`<table>`) to support all Excel features:
+
+- **Merged cells** — `colspan` and `rowspan` attributes are set on the master (top-left) cell; child cells are omitted entirely.
+- **Header row** — rendered inside `<thead>` as `<th>` elements when `headerRow: true`.
+- **Column alignment** — columns whose data cells are all numeric are automatically right-aligned (`style="text-align: right"`). Explicit cell alignment takes precedence.
+- **Newlines within cells** — converted to `<br>`.
+- **HTML escaping** — `&`, `<`, `>`, `"` in cell values are escaped to HTML entities.
 
 ## Architecture Decision Records
 

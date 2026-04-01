@@ -31,10 +31,22 @@ function applyInlineFormatting(text: string, bold: boolean, italic: boolean): st
 }
 
 /**
- * Escape pipe and backslash characters inside a table cell value.
+ * Escape pipe and backslash characters inside a GFM table cell value.
+ * @deprecated Not used in HTML table rendering; kept for potential external use.
  */
 export function escapeTableCell(value: string): string {
   return value.replace(/\\/g, '\\\\').replace(/\|/g, '\\|');
+}
+
+/**
+ * Escape HTML special characters for safe embedding in HTML attributes and text.
+ */
+export function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
 
 /**
@@ -50,6 +62,7 @@ export function extractCellData(
 
   if (!cell || cell.v === undefined || cell.v === null) {
     return {
+      rawValue: '',
       value: '',
       bold: false,
       italic: false,
@@ -120,6 +133,7 @@ export function extractCellData(
   const final = hyperlink ? `[${formatted}](${hyperlink})` : formatted;
 
   return {
+    rawValue: value,
     value: final,
     bold,
     italic,
