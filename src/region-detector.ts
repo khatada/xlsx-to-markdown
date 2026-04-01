@@ -83,6 +83,12 @@ function detectInRange(
 /**
  * Classify a band of rows (no empty rows) within a fixed column range into
  * table and paragraph regions based on row density.
+ *
+ * When useBorders is enabled: if the band contains bordered rows, all rows
+ * before the first bordered row are treated as paragraphs regardless of
+ * density.  This lets a caption/title row that sits directly above a table
+ * (no blank-row separator) be correctly classified as a paragraph even when
+ * it has many filled columns.
  */
 function classifyBand(
   band: RowInfo[],
@@ -90,9 +96,26 @@ function classifyBand(
   colEnd: number,
   opts: ResolvedOptions,
 ): RawRegion[] {
-  const { minColumns, minRows } = opts.tableDetection;
+  const { minColumns, minRows, useBorders } = opts.tableDetection;
   const regions: RawRegion[] = [];
   let i = 0;
+
+  // Border-based table-start detection: emit leading non-bordered rows as
+  // paragraphs so that the table starts at the first bordered row.
+  if (useBorders) {
+    const firstBorderIdx = band.findIndex((r) => r.hasBorder);
+    if (firstBorderIdx > 0) {
+      const paraRows = band.slice(0, firstBorderIdx);
+      regions.push({
+        type: "paragraph",
+        startRow: paraRows[0].index,
+        endRow: paraRows[paraRows.length - 1].index,
+        startCol: colStart,
+        endCol: colEnd,
+      });
+      i = firstBorderIdx;
+    }
+  }
 
   while (i < band.length) {
     const filled = countInRange(band[i].filledCols, colStart, colEnd);

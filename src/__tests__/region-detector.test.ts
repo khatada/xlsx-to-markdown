@@ -5,11 +5,11 @@ import { resolveOptions } from "../options.js";
 import { convertWorkbook } from "../index.js";
 import type { RowInfo } from "../types.js";
 
-function makeRowInfo(index: number, cols: number[]): RowInfo {
+function makeRowInfo(index: number, cols: number[], hasBorder = false): RowInfo {
   const filledCols = new Set(cols);
   const minCol = cols.length ? Math.min(...cols) : -1;
   const maxCol = cols.length ? Math.max(...cols) : -1;
-  return { index, filledCols, minCol, maxCol, filledCount: cols.length };
+  return { index, filledCols, minCol, maxCol, filledCount: cols.length, hasBorder };
 }
 
 describe("detectRegions", () => {
@@ -102,6 +102,69 @@ describe("detectRegions", () => {
     // Table B: cols 4–6
     expect(regions[1].startCol).toBe(4);
     expect(regions[1].endCol).toBe(6);
+  });
+
+  describe("border-based table start detection (useBorders: true)", () => {
+    const borderOpts = resolveOptions({ tableDetection: { useBorders: true } });
+
+    it("dense rows before first bordered row become a paragraph", () => {
+      // Row 0: title row — 3 filled cols, no border → should be paragraph
+      // Rows 1-2: table rows — bordered
+      const rows = [
+        makeRowInfo(0, [0, 1, 2], false), // dense but no border
+        makeRowInfo(1, [0, 1, 2], true), // table header (bordered)
+        makeRowInfo(2, [0, 1, 2], true), // table data (bordered)
+      ];
+      const regions = detectRegions(rows, borderOpts);
+      expect(regions).toHaveLength(2);
+      expect(regions[0].type).toBe("paragraph");
+      expect(regions[0].startRow).toBe(0);
+      expect(regions[0].endRow).toBe(0);
+      expect(regions[1].type).toBe("table");
+      expect(regions[1].startRow).toBe(1);
+      expect(regions[1].endRow).toBe(2);
+    });
+
+    it("multiple leading non-bordered rows all become a single paragraph region", () => {
+      const rows = [
+        makeRowInfo(0, [0, 1], false),
+        makeRowInfo(1, [0, 1], false),
+        makeRowInfo(2, [0, 1], true),
+        makeRowInfo(3, [0, 1], true),
+      ];
+      const regions = detectRegions(rows, borderOpts);
+      expect(regions).toHaveLength(2);
+      expect(regions[0].type).toBe("paragraph");
+      expect(regions[0].startRow).toBe(0);
+      expect(regions[0].endRow).toBe(1);
+      expect(regions[1].type).toBe("table");
+      expect(regions[1].startRow).toBe(2);
+    });
+
+    it("falls back to density when no row has borders", () => {
+      // All rows without borders → density-based classification as before
+      const rows = [
+        makeRowInfo(0, [0], false), // sparse → paragraph
+        makeRowInfo(1, [0, 1], false), // dense
+        makeRowInfo(2, [0, 1], false), // dense → table (minRows satisfied)
+      ];
+      const regions = detectRegions(rows, borderOpts);
+      expect(regions[0].type).toBe("paragraph");
+      expect(regions[1].type).toBe("table");
+    });
+
+    it("when useBorders is false, leading dense rows are classified as table", () => {
+      const noBorderOpts = resolveOptions({ tableDetection: { useBorders: false } });
+      const rows = [
+        makeRowInfo(0, [0, 1, 2], false),
+        makeRowInfo(1, [0, 1, 2], true),
+        makeRowInfo(2, [0, 1, 2], true),
+      ];
+      const regions = detectRegions(rows, noBorderOpts);
+      expect(regions).toHaveLength(1);
+      expect(regions[0].type).toBe("table");
+      expect(regions[0].startRow).toBe(0);
+    });
   });
 
   it("side-by-side tables are rendered as two separate HTML tables", () => {

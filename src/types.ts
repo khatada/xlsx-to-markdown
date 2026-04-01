@@ -170,4 +170,6 @@ export interface RowInfo {
   maxCol: number;
   /** Number of filled (non-child-merge) cells */
   filledCount: number;
+  /** True when at least one cell in this row has any border (used for table boundary detection) */
+  hasBorder: boolean;
 }

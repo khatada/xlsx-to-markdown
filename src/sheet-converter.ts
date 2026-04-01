@@ -30,6 +30,7 @@ export function convertSheet(
     let minCol = Infinity;
     let maxCol = -Infinity;
     let filledCount = 0;
+    let hasBorder = false;
     const filledCols = new Set<number>();
 
     for (let c = range.s.c; c <= range.e.c; c++) {
@@ -43,6 +44,18 @@ export function convertSheet(
         if (c < minCol) minCol = c;
         if (c > maxCol) maxCol = c;
       }
+
+      // Check for borders on any cell (including empty cells)
+      if (!hasBorder && cell) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const style: any = (cell as any).s;
+        if (style?.border) {
+          const b = style.border;
+          if (b.top?.style || b.bottom?.style || b.left?.style || b.right?.style) {
+            hasBorder = true;
+          }
+        }
+      }
     }
 
     rowInfos.push({
@@ -51,6 +64,7 @@ export function convertSheet(
       minCol: minCol === Infinity ? -1 : minCol,
       maxCol: maxCol === -Infinity ? -1 : maxCol,
       filledCount,
+      hasBorder,
     });
   }
 
