@@ -2,7 +2,7 @@
 
 Node.js / TypeScript library that converts XLSX files to Markdown.
 
-Mixed content is handled automatically — paragraphs of text and tables can coexist on the same sheet, in any order. Multiple tables per sheet are also supported.
+Mixed content is handled automatically — paragraphs of text and tables can coexist on the same sheet, in any order. Multiple tables per sheet (including side-by-side tables) are supported.
 
 ## Installation
 
@@ -76,7 +76,7 @@ const result = await convertXlsxToMarkdown('report.xlsx', {
     minRows: 2,                    // minimum rows to classify a region as a table
     useBorders: true,              // use cell borders as additional table hints
   },
-  richText: true,                  // convert bold/italic/hyperlinks to Markdown syntax
+  richText: true,                  // convert bold/italic/hyperlinks to inline markup
   emptyCell: '',                   // placeholder for empty table cells
   dateFormat: 'YYYY-MM-DD',        // date format tokens: YYYY MM DD HH mm ss
   blankLinesBetweenRegions: 1,     // blank lines inserted between regions
@@ -100,21 +100,38 @@ const result = await convertXlsxToMarkdown('report.xlsx', {
 
 ## Content Detection
 
-The library automatically classifies each rectangular block of cells as either a **table** or a **paragraph**:
+The library uses a recursive row→column→row scan to classify each block of cells as a **table** or **paragraph**.
 
-- **Table** — a contiguous block of rows where each row has `≥ minColumns` filled cells, and the block spans `≥ minRows` rows.
-- **Paragraph** — one or more rows where each row has fewer than `minColumns` filled cells (e.g. a single wide text cell, or a heading).
+### Detection algorithm
 
-Empty rows act as separators between regions. Regions are emitted in top-to-bottom order, preserving the original document flow.
+1. **Row scan** — split the sheet into bands of consecutive non-empty rows (empty rows act as separators)
+2. **Column scan** — within each band, find columns that are entirely empty and use them as split points → column sub-ranges
+3. **Recurse** — each column sub-range is processed independently by the same algorithm
+4. **Classify** — a band that cannot be split further is classified:
+   - **Table** — every row has `≥ minColumns` filled cells, and the band spans `≥ minRows` rows
+   - **Paragraph** — everything else
 
-### Example sheet layout
+### Side-by-side tables
+
+Tables placed horizontally on the same rows (separated by at least one empty column) are detected as independent regions:
+
+```
+     A     B     C          E     F     G
+1  Name  Score  Grade      Item   Qty  Price   ← two separate headers
+2  Alice   90    A         Apple   5    100
+3  Bob     75    B         Banana  3     60
+```
+
+Column D is empty → detected as two tables (A–C and E–G), each rendered as its own `<table>`.
+
+### Mixed content example
 
 ```
 Row 1:  "Section 1: Introduction"          ← paragraph
 Row 2:  (empty)
 Row 3:  Name    | Department | Salary      ← table header
-Row 4:  Alice   | Engineering| 800,000     ← table row
-Row 5:  Bob     | Marketing  | 650,000     ← table row
+Row 4:  Alice   | Engineering| 800,000
+Row 5:  Bob     | Marketing  | 650,000
 Row 6:  (empty)
 Row 7:  "* Figures are in JPY"             ← paragraph
 Row 8:  (empty)
@@ -127,16 +144,26 @@ Output:
 ```markdown
 Section 1: Introduction
 
-| Name  | Department  | Salary    |
-| ----- | ----------- | --------: |
-| Alice | Engineering | 800,000   |
-| Bob   | Marketing   | 650,000   |
+<table>
+  <thead>
+    <tr><th>Name</th><th>Department</th><th style="text-align: right">Salary</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Alice</td><td>Engineering</td><td style="text-align: right">800,000</td></tr>
+    <tr><td>Bob</td><td>Marketing</td><td style="text-align: right">650,000</td></tr>
+  </tbody>
+</table>
 
 * Figures are in JPY
 
-| Q1    | Q2    |
-| ----: | ----: |
-| 1,200 | 1,450 |
+<table>
+  <thead>
+    <tr><th style="text-align: right">Q1</th><th style="text-align: right">Q2</th></tr>
+  </thead>
+  <tbody>
+    <tr><td style="text-align: right">1,200</td><td style="text-align: right">1,450</td></tr>
+  </tbody>
+</table>
 ```
 
 ## Rich Text
@@ -159,6 +186,7 @@ Tables are output as HTML (`<table>`) to support all Excel features:
 - **Column alignment** — columns whose data cells are all numeric are automatically right-aligned (`style="text-align: right"`). Explicit cell alignment takes precedence.
 - **Newlines within cells** — converted to `<br>`.
 - **HTML escaping** — `&`, `<`, `>`, `"` in cell values are escaped to HTML entities.
+- **Formula cells** — the computed value is used; the formula string is never output.
 
 ## Architecture Decision Records
 
@@ -168,8 +196,11 @@ Design decisions are documented in [`docs/adr/`](docs/adr/).
 
 ```bash
 npm install
-npm test          # run all tests
-npm run build     # compile TypeScript → dist/
+npm test            # run all tests (vitest)
+npm run build       # compile TypeScript → dist/
+npm run lint        # oxlint
+npm run fmt         # oxfmt
+npm run fmt:check   # check formatting (CI)
 ```
 
 ## License

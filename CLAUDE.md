@@ -48,12 +48,29 @@ ADR の一覧・ステータスは `docs/adr/README.md` が唯一の正としま
 
 4. `docs/adr/README.md` の一覧テーブルに追記する（CLAUDE.md への追記は不要）
 
+## README 更新ルール
+
+以下のいずれかに該当する変更を行った場合は **README.md を必ず更新**してください。
+
+| 変更の種類 | README で更新する箇所 |
+| --- | --- |
+| 公開 API の追加・変更・削除 | API セクション |
+| オプションの追加・変更・削除 | Options セクション・デフォルト値テーブル |
+| 領域検出アルゴリズムの変更 | Content Detection セクション |
+| テーブル・段落の出力形式変更 | Table Formatting Details / Rich Text セクション |
+| 開発コマンドの追加・変更 | Development セクション |
+
+README の更新はコードと同じコミットに含めてください。
+
 ## 開発コマンド
 
 ```bash
-npm test          # テスト実行 (vitest)
-npm run build     # TypeScript コンパイル → dist/
+npm test            # テスト実行 (vitest)
+npm run build       # TypeScript コンパイル → dist/
 npm run test:watch  # ウォッチモードでテスト
+npm run lint        # oxlint
+npm run fmt         # oxfmt（上書き）
+npm run fmt:check   # フォーマット確認（CI 用）
 ```
 
 ## コード規約
@@ -72,7 +89,7 @@ src/
   cell-formatter.ts     — セル値の抽出・書式変換
                           rawValue: 生テキスト（HTMLレンダラーが使用）
                           value:    Markdown書式付き（段落レンダラーが使用）
-  region-detector.ts    — 行密度スキャンによるテーブル/段落の領域検出
+  region-detector.ts    — 行→列→再帰スキャンによるテーブル/段落の領域検出（横並び表対応）
   table-renderer.ts     — HTML テーブル出力 (colspan/rowspan 対応)
   paragraph-renderer.ts — Markdown 段落出力
   sheet-converter.ts    — シート全体の変換オーケストレーション
@@ -84,4 +101,4 @@ src/
 - **テーブルは HTML 出力**: `<table>`/`<thead>`/`<tbody>` + colspan/rowspan（詳細: `docs/adr/`）
 - **段落は Markdown 出力**: プレーンテキスト + `**bold**`, `_italic_` 記法
 - **rawValue と value の分離**: `CellData.rawValue` は HTML エスケープ前の生テキスト、`CellData.value` は Markdown 書式適用済みテキスト。テーブルレンダラーは `rawValue` を使い HTML タグを適用する
-- **領域検出の閾値**: `minColumns`（デフォルト 2）以上のセルが `minRows`（デフォルト 2）行以上連続する矩形をテーブルとみなす
+- **領域検出**: 行→列→再帰スキャン。空列をギャップとして横並び表を分離する。`minColumns` / `minRows` で閾値を調整できる
