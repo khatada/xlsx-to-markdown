@@ -16,7 +16,6 @@ describe("extractCellData", () => {
       const cell = makeCell({ t: "n", v: 30, f: "A1+B1", w: "30" });
       const data = extractCellData(cell, noMerges, "C1", opts);
       expect(data.rawValue).toBe("30");
-      expect(data.rawValue).not.toContain("A1+B1");
     });
 
     it("uses formatted string (w) over raw value when available", () => {
@@ -126,7 +125,7 @@ describe("extractCellData", () => {
         l: { Target: "https://cell-l.example.com" },
       } as Partial<XLSX.CellObject>);
       const data = extractCellData(cell, noMerges, "A1", opts);
-      expect(data.value).toContain("https://cell-l.example.com");
+      expect(data.value).toBe("[link](https://cell-l.example.com)");
     });
   });
 

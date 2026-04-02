@@ -23,8 +23,7 @@ describe("paragraph rendering", () => {
       },
     ]);
     const { markdown } = convertWorkbook(wb);
-    expect(normalise(markdown)).toContain("First paragraph");
-    expect(normalise(markdown)).toContain("Second paragraph");
+    expect(normalise(markdown)).toBe("First paragraph\n\nSecond paragraph");
   });
 
   it("joins multiple cells in the same row with a space", () => {
@@ -47,10 +46,7 @@ describe("paragraph rendering", () => {
     };
     XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
     const { markdown } = convertWorkbook(wb);
-    // Newlines are preserved in paragraph output
-    expect(markdown).toContain("line1");
-    expect(markdown).toContain("line2");
-    expect(markdown).toContain("line3");
+    expect(markdown).toBe("line1\nline2\nline3");
   });
 
   it("mixes text and table content in order", () => {

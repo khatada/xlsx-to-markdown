@@ -98,13 +98,29 @@ describe("table rendering with CJK content", () => {
       },
     ]);
     const { markdown } = convertWorkbook(wb);
-    expect(markdown).toContain("<th>氏名</th>");
-    // 年齢は数値列なので right-align スタイルが付く
-    expect(markdown).toMatch(/年齢/);
-    expect(markdown).toContain("<th>部署</th>");
-    expect(markdown).toContain("<td>田中 太郎</td>");
-    expect(markdown).toContain("<td>李 小龍</td>");
-    expect(markdown).toContain("<td>営業部</td>");
+    expect(markdown).toBe(
+      `<table>
+  <thead>
+    <tr>
+    <th>氏名</th>
+    <th style="text-align: right">年齢</th>
+    <th>部署</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+    <td>田中 太郎</td>
+    <td style="text-align: right">30</td>
+    <td>営業部</td>
+    </tr>
+    <tr>
+    <td>李 小龍</td>
+    <td style="text-align: right">25</td>
+    <td>開発部</td>
+    </tr>
+  </tbody>
+</table>`,
+    );
   });
 
   it("does not right-align CJK text columns (only numeric columns get right-align)", () => {
@@ -119,8 +135,26 @@ describe("table rendering with CJK content", () => {
       },
     ]);
     const { markdown } = convertWorkbook(wb);
-    // CJK text → no right-align style
-    expect(markdown).not.toContain('style="text-align: right"');
+    expect(markdown).toBe(
+      `<table>
+  <thead>
+    <tr>
+    <th>商品</th>
+    <th>カテゴリ</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+    <td>りんご</td>
+    <td>果物</td>
+    </tr>
+    <tr>
+    <td>にんじん</td>
+    <td>野菜</td>
+    </tr>
+  </tbody>
+</table>`,
+    );
   });
 
   it("escapes HTML special characters mixed into CJK content", () => {
@@ -134,8 +168,22 @@ describe("table rendering with CJK content", () => {
       },
     ]);
     const { markdown } = convertWorkbook(wb);
-    expect(markdown).toContain("価格 &lt; 100");
-    expect(markdown).toContain("A &amp; B");
+    expect(markdown).toBe(
+      `<table>
+  <thead>
+    <tr>
+    <th>説明</th>
+    <th>値</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+    <td>価格 &lt; 100</td>
+    <td>A &amp; B</td>
+    </tr>
+  </tbody>
+</table>`,
+    );
   });
 
   it("handles Korean characters in headers and cells", () => {
@@ -150,8 +198,26 @@ describe("table rendering with CJK content", () => {
       },
     ]);
     const { markdown } = convertWorkbook(wb);
-    expect(markdown).toContain("<th>이름</th>");
-    expect(markdown).toContain("<td>김철수</td>");
+    expect(markdown).toBe(
+      `<table>
+  <thead>
+    <tr>
+    <th>이름</th>
+    <th style="text-align: right">나이</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+    <td>김철수</td>
+    <td style="text-align: right">28</td>
+    </tr>
+    <tr>
+    <td>이영희</td>
+    <td style="text-align: right">32</td>
+    </tr>
+  </tbody>
+</table>`,
+    );
   });
 
   it("handles Simplified Chinese characters in headers and cells", () => {
@@ -166,9 +232,29 @@ describe("table rendering with CJK content", () => {
       },
     ]);
     const { markdown } = convertWorkbook(wb);
-    expect(markdown).toContain("<th>姓名</th>");
-    expect(markdown).toContain("<td>张伟</td>");
-    expect(markdown).toContain("<td>北京</td>");
+    expect(markdown).toBe(
+      `<table>
+  <thead>
+    <tr>
+    <th>姓名</th>
+    <th style="text-align: right">年龄</th>
+    <th>城市</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+    <td>张伟</td>
+    <td style="text-align: right">35</td>
+    <td>北京</td>
+    </tr>
+    <tr>
+    <td>王芳</td>
+    <td style="text-align: right">28</td>
+    <td>上海</td>
+    </tr>
+  </tbody>
+</table>`,
+    );
   });
 
   it("renders CJK text in cells with newlines using <br>", () => {
@@ -182,7 +268,22 @@ describe("table rendering with CJK content", () => {
     };
     XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
     const { markdown } = convertWorkbook(wb);
-    expect(markdown).toContain("高品質<br>低価格");
+    expect(markdown).toBe(
+      `<table>
+  <thead>
+    <tr>
+    <th>項目</th>
+    <th>説明</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+    <td>商品名</td>
+    <td>高品質<br>低価格</td>
+    </tr>
+  </tbody>
+</table>`,
+    );
   });
 
   it("renders CJK rich text with bold HTML tags", () => {
@@ -196,7 +297,22 @@ describe("table rendering with CJK content", () => {
     };
     XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
     const { markdown } = convertWorkbook(wb, { richText: true });
-    expect(markdown).toContain("<strong>重要</strong>");
+    expect(markdown).toBe(
+      `<table>
+  <thead>
+    <tr>
+    <th>Name</th>
+    <th>Note</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+    <td>田中</td>
+    <td><strong>重要</strong></td>
+    </tr>
+  </tbody>
+</table>`,
+    );
   });
 
   it("right-aligns numeric column even when header is CJK", () => {
@@ -211,8 +327,26 @@ describe("table rendering with CJK content", () => {
       },
     ]);
     const { markdown } = convertWorkbook(wb);
-    // 価格 column is all numeric → right-aligned
-    expect(markdown).toContain('style="text-align: right"');
+    expect(markdown).toBe(
+      `<table>
+  <thead>
+    <tr>
+    <th>商品</th>
+    <th style="text-align: right">価格</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+    <td>りんご</td>
+    <td style="text-align: right">150</td>
+    </tr>
+    <tr>
+    <td>みかん</td>
+    <td style="text-align: right">100</td>
+    </tr>
+  </tbody>
+</table>`,
+    );
   });
 });
 
@@ -229,7 +363,7 @@ describe("paragraph rendering with CJK content", () => {
       },
     ]);
     const { markdown } = convertWorkbook(wb);
-    expect(markdown).toContain("これはテストです。");
+    expect(markdown).toBe("これはテストです。");
   });
 
   it("renders multiple CJK rows as separate paragraphs", () => {
@@ -240,8 +374,7 @@ describe("paragraph rendering with CJK content", () => {
       },
     ]);
     const { markdown } = convertWorkbook(wb);
-    expect(markdown).toContain("概要");
-    expect(markdown).toContain("詳細説明");
+    expect(markdown).toBe("概要\n\n詳細説明");
   });
 
   it("joins multiple CJK cells in the same row with a space", () => {
@@ -252,7 +385,7 @@ describe("paragraph rendering with CJK content", () => {
       },
     ]);
     const { markdown } = convertWorkbook(wb, { tableDetection: { minRows: 2, minColumns: 3 } });
-    expect(markdown).toContain("タイトル サブタイトル");
+    expect(markdown).toBe("タイトル サブタイトル");
   });
 });
 
@@ -279,8 +412,35 @@ describe("multi-sheet with CJK sheet names", () => {
       },
     ]);
     const { markdown } = convertWorkbook(wb);
-    expect(markdown).toContain("## 売上データ");
-    expect(markdown).toContain("## 仕入データ");
+    const tableUriage = `<table>
+  <thead>
+    <tr>
+    <th>月</th>
+    <th style="text-align: right">金額</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+    <td>1月</td>
+    <td style="text-align: right">100000</td>
+    </tr>
+  </tbody>
+</table>`;
+    const tableShiire = `<table>
+  <thead>
+    <tr>
+    <th>月</th>
+    <th style="text-align: right">金額</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+    <td>1月</td>
+    <td style="text-align: right">80000</td>
+    </tr>
+  </tbody>
+</table>`;
+    expect(markdown).toBe(`## 売上データ\n\n${tableUriage}\n\n\n## 仕入データ\n\n${tableShiire}`);
   });
 
   it("renders mixed ASCII and CJK sheet names", () => {
@@ -301,7 +461,34 @@ describe("multi-sheet with CJK sheet names", () => {
       },
     ]);
     const { markdown } = convertWorkbook(wb);
-    expect(markdown).toContain("## Summary");
-    expect(markdown).toContain("## 詳細");
+    const tableSummary = `<table>
+  <thead>
+    <tr>
+    <th style="text-align: right">a</th>
+    <th style="text-align: right">b</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+    <td style="text-align: right">1</td>
+    <td style="text-align: right">2</td>
+    </tr>
+  </tbody>
+</table>`;
+    const tableShosai = `<table>
+  <thead>
+    <tr>
+    <th style="text-align: right">x</th>
+    <th style="text-align: right">y</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+    <td style="text-align: right">3</td>
+    <td style="text-align: right">4</td>
+    </tr>
+  </tbody>
+</table>`;
+    expect(markdown).toBe(`## Summary\n\n${tableSummary}\n\n\n## 詳細\n\n${tableShosai}`);
   });
 });

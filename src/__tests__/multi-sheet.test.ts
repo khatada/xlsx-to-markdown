@@ -2,6 +2,36 @@ import { describe, it, expect } from "vitest";
 import { convertWorkbook } from "../index.js";
 import { buildWorkbook } from "./helpers.js";
 
+const TABLE_AB = `<table>
+  <thead>
+    <tr>
+    <th style="text-align: right">a</th>
+    <th style="text-align: right">b</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+    <td style="text-align: right">1</td>
+    <td style="text-align: right">2</td>
+    </tr>
+  </tbody>
+</table>`;
+
+const TABLE_XY = `<table>
+  <thead>
+    <tr>
+    <th style="text-align: right">x</th>
+    <th style="text-align: right">y</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+    <td style="text-align: right">3</td>
+    <td style="text-align: right">4</td>
+    </tr>
+  </tbody>
+</table>`;
+
 describe("multi-sheet handling", () => {
   it("adds ## headings when there are multiple sheets", () => {
     const wb = buildWorkbook([
@@ -21,8 +51,7 @@ describe("multi-sheet handling", () => {
       },
     ]);
     const { markdown } = convertWorkbook(wb);
-    expect(markdown).toContain("## Alpha");
-    expect(markdown).toContain("## Beta");
+    expect(markdown).toBe(`## Alpha\n\n${TABLE_AB}\n\n\n## Beta\n\n${TABLE_XY}`);
   });
 
   it("does NOT add headings for a single sheet", () => {
@@ -36,7 +65,7 @@ describe("multi-sheet handling", () => {
       },
     ]);
     const { markdown } = convertWorkbook(wb);
-    expect(markdown).not.toContain("## Only");
+    expect(markdown).toBe(TABLE_AB);
   });
 
   it("respects the sheetHeadings: false option", () => {
@@ -57,8 +86,7 @@ describe("multi-sheet handling", () => {
       },
     ]);
     const { markdown } = convertWorkbook(wb, { sheetHeadings: false });
-    expect(markdown).not.toContain("## Alpha");
-    expect(markdown).not.toContain("## Beta");
+    expect(markdown).toBe(`${TABLE_AB}\n\n\n${TABLE_XY}`);
   });
 
   it("filters sheets by name", () => {

@@ -79,6 +79,7 @@ npm run fmt:check   # フォーマット確認（CI 用）
 - 公開 API の型は `src/types.ts` に集約する
 - テストは `src/__tests__/` に配置し、ファイル名は `*.test.ts`
 - 新機能を追加する際は対応するテストも追加する
+- **markdown 文字列の検証は `toBe` で完全一致**: `convertWorkbook` が返す `markdown` / `sheets[i].markdown` を検証する際は `toContain` ではなく `toBe` を使って出力全体を比較する
 
 ## 現在のアーキテクチャ概要
 
