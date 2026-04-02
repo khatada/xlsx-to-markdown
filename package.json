@@ -14,6 +14,7 @@
     "lint:fix": "oxlint src/ --fix",
     "fmt": "oxfmt src/",
     "fmt:check": "oxfmt src/ --check",
+    "secretlint": "secretlint \"**/*\"",
     "prepublishOnly": "npm run build",
     "prepare": "husky"
   },
@@ -29,11 +30,13 @@
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
+    "@secretlint/secretlint-rule-preset-recommend": "^11.4.1",
     "@types/node": "^20.0.0",
     "@vitest/coverage-v8": "^1.0.0",
     "husky": "^9.1.7",
     "oxfmt": "^0.43.0",
     "oxlint": "^1.58.0",
+    "secretlint": "^11.4.1",
     "typescript": "^5.3.0",
     "vitest": "^1.0.0"
   }
