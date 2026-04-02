@@ -7,12 +7,13 @@ description: >
 
   IMPORTANT — also trigger AUTOMATICALLY (without waiting for user instruction)
   in these situations:
+  - BEFORE discussing or proposing any design/spec decision.
+  - BEFORE writing any code (even a single line of implementation).
   - After implementing or committing any of the following types of changes:
     new library/dependency added, algorithm changed, data structure changed
     (e.g. new field added to a core interface), public API added/changed/removed,
     output format changed, detection heuristic changed.
-  - Before starting implementation of a non-trivial design decision, to check
-    whether an existing ADR covers it.
+  This is a non-negotiable rule. Never skip the ADR check.
   When triggered automatically, run the "proactive-check" operation below.
 ---
 
