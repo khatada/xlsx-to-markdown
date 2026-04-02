@@ -7,12 +7,13 @@ description: >
 
   IMPORTANT — also trigger AUTOMATICALLY (without waiting for user instruction)
   in these situations:
+  - BEFORE discussing or proposing any design/spec decision.
+  - BEFORE writing any code (even a single line of implementation).
   - After implementing or committing any of the following types of changes:
     new library/dependency added, algorithm changed, data structure changed
     (e.g. new field added to a core interface), public API added/changed/removed,
     output format changed, detection heuristic changed.
-  - Before starting implementation of a non-trivial design decision, to check
-    whether an existing ADR covers it.
+  This is a non-negotiable rule. Never skip the ADR check.
   When triggered automatically, run the "proactive-check" operation below.
 ---
 
@@ -37,7 +38,9 @@ ADR ファイルは `docs/adr/` に置かれる。操作前に必ず `docs/adr/R
 
 ## 操作: proactive-check
 
-コード変更・コミット後にユーザーの指示なく自動実行する。
+**コード変更を伴うタスクが完了するたびに必ず実行する。** ユーザーへの最終返答の前に
+このチェックを完了させること。ADR が必要な変更であれば、ユーザーへの返答より先に
+ADR を作成・更新してコミットに含める。
 
 ### ステップ 1 — 変更内容の分類
 
@@ -65,6 +68,9 @@ ADR ファイルは `docs/adr/` に置かれる。操作前に必ず `docs/adr/R
 
 - 新しい設計決定 → 「操作: new」を実行する
 - 既存の決定を覆す変更 → 「操作: supersede」を実行する
+
+> **重要**: ADR の作成・更新はコードと同じコミットに含めること。タスク完了後に
+> 「ADR を更新し忘れた」状態でユーザーに返答しないこと。
 
 ---
 

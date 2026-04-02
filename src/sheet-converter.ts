@@ -23,6 +23,12 @@ export function convertSheet(
 
   const mergedCellInfo = buildMergedCellInfo(merges);
 
+  // Excel ListObject tables always have an autofilter; use that range to treat
+  // all cells within it as non-empty regardless of their value.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const autofilterRef: string | undefined = (ws["!autofilter"] as any)?.ref;
+  const autofilterRange = autofilterRef ? XLSX.utils.decode_range(autofilterRef) : null;
+
   // Issue 1: Build sets of hidden row/column indices for use in detection and rendering
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const rowsConfig: any[] = (ws["!rows"] as any) ?? [];
@@ -75,7 +81,16 @@ export function convertSheet(
       }
 
       const cell: XLSX.CellObject | undefined = ws[addr];
-      if (cell && cell.v !== undefined && cell.v !== null && cell.v !== "") {
+      const hasValue =
+        cell !== undefined && cell.v !== undefined && cell.v !== null && cell.v !== "";
+      const inAutofilter =
+        autofilterRange !== null &&
+        r >= autofilterRange.s.r &&
+        r <= autofilterRange.e.r &&
+        c >= autofilterRange.s.c &&
+        c <= autofilterRange.e.c;
+
+      if (hasValue) {
         filledCols.add(c);
         filledCount++;
 
@@ -89,6 +104,11 @@ export function convertSheet(
             filledCount++;
           }
         }
+      } else if (inAutofilter && !filledCols.has(c)) {
+        // Cells within an Excel table (autofilter) range are treated as non-empty
+        // so that empty cells in a ListObject do not break table detection.
+        filledCols.add(c);
+        filledCount++;
       }
 
       // Check for borders on any cell (including empty cells)
@@ -102,6 +122,18 @@ export function convertSheet(
           }
           if (b.left?.style || b.right?.style) {
             hasVerticalBorder = true;
+            // When useBorders is enabled, treat cells with BOTH left and right
+            // vertical borders as non-empty so that bordered-but-valueless cells
+            // (common in Excel table formatting) contribute to column density.
+            if (
+              opts.tableDetection.useBorders &&
+              b.left?.style &&
+              b.right?.style &&
+              !filledCols.has(c)
+            ) {
+              filledCols.add(c);
+              filledCount++;
+            }
           }
         }
       }

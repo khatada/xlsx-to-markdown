@@ -17,6 +17,7 @@
 | [0011](0011-border-based-table-boundary-detection.md) | 縦罫線（左右）を表境界検出の主要シグナルとして使用する | 採用済み |
 | [0012](0012-exclude-hidden-rows-and-columns.md) | 非表示行・列を変換出力から除外する | 採用済み |
 | [0013](0013-hyperlink-formula-extraction.md) | =HYPERLINK() 数式からリンク先 URL を抽出する | 採用済み |
+| [0014](0014-treat-bordered-and-autofiltered-empty-cells-as-non-empty.md) | 罫線・autofilter 条件を満たす空セルを非空として扱う | 採用済み |
 
 ## ADR の形式
 
