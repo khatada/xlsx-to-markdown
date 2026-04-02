@@ -20,14 +20,18 @@ export function renderParagraph(
   endCol: number,
   merges: XLSX.Range[],
   opts: ResolvedOptions,
+  hiddenRows: Set<number> = new Set(),
+  hiddenCols: Set<number> = new Set(),
 ): string {
   const mergedChildCells = buildMergedChildSet(merges);
 
   const lines: string[] = [];
 
   for (let r = startRow; r <= endRow; r++) {
+    if (hiddenRows.has(r)) continue;
     const parts: string[] = [];
     for (let c = startCol; c <= endCol; c++) {
+      if (hiddenCols.has(c)) continue;
       const addr = XLSX.utils.encode_cell({ r, c });
       const cell: XLSX.CellObject | undefined = ws[addr];
       const data = extractCellData(cell, mergedChildCells, addr, opts);

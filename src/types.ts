@@ -170,4 +170,12 @@ export interface RowInfo {
   maxCol: number;
   /** Number of filled (non-child-merge) cells */
   filledCount: number;
+  /** True when at least one cell in this row has any border */
+  hasBorder: boolean;
+  /**
+   * True when at least one cell in this row has a vertical border (left or right).
+   * Vertical borders indicate column structure and are the primary signal for
+   * table-boundary detection when `useBorders` is enabled.
+   */
+  hasVerticalBorder: boolean;
 }

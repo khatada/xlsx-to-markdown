@@ -114,6 +114,12 @@ export function extractCellData(
     hyperlink = links.Target;
   }
 
+  // Issue 4: =HYPERLINK("url", ...) formula — cell.l is absent for formula-based links
+  if (!hyperlink && cell.f) {
+    const match = cell.f.match(/^HYPERLINK\s*\(\s*"([^"]+)"/i);
+    if (match) hyperlink = match[1];
+  }
+
   // --- Border detection ---
   let hasBorder = false;
   if (style?.border) {

@@ -26,6 +26,8 @@ export function renderTable(
   endCol: number,
   merges: XLSX.Range[],
   opts: ResolvedOptions,
+  hiddenRows: Set<number> = new Set(),
+  hiddenCols: Set<number> = new Set(),
 ): string {
   // Build merge maps for cells inside this table region
   const mergeSpanMap = new Map<string, MergeSpan>(); // master address → span
@@ -57,12 +59,14 @@ export function renderTable(
     endCol,
     mergeChildSet,
     opts,
+    hiddenRows,
+    hiddenCols,
   );
 
   const lines: string[] = ["<table>"];
 
   // --- <thead> ---
-  if (opts.headerRow) {
+  if (opts.headerRow && !hiddenRows.has(startRow)) {
     lines.push("  <thead>");
     lines.push(
       renderHtmlRow(
@@ -75,6 +79,7 @@ export function renderTable(
         alignments,
         opts,
         "th",
+        hiddenCols,
       ),
     );
     lines.push("  </thead>");
@@ -84,8 +89,20 @@ export function renderTable(
   lines.push("  <tbody>");
   const dataStartRow = opts.headerRow ? startRow + 1 : startRow;
   for (let r = dataStartRow; r <= endRow; r++) {
+    if (hiddenRows.has(r)) continue;
     lines.push(
-      renderHtmlRow(ws, r, startCol, endCol, mergeSpanMap, mergeChildSet, alignments, opts, "td"),
+      renderHtmlRow(
+        ws,
+        r,
+        startCol,
+        endCol,
+        mergeSpanMap,
+        mergeChildSet,
+        alignments,
+        opts,
+        "td",
+        hiddenCols,
+      ),
     );
   }
   lines.push("  </tbody>");
@@ -108,10 +125,12 @@ function renderHtmlRow(
   alignments: ("left" | "center" | "right")[],
   opts: ResolvedOptions,
   tag: "th" | "td",
+  hiddenCols: Set<number> = new Set(),
 ): string {
   const cells: string[] = [];
 
   for (let c = startCol; c <= endCol; c++) {
+    if (hiddenCols.has(c)) continue;
     const addr = XLSX.utils.encode_cell({ r: row, c });
 
     // Skip child cells of a merge
@@ -179,6 +198,8 @@ function inferColumnAlignments(
   endCol: number,
   mergeChildSet: Set<string>,
   opts: ResolvedOptions,
+  hiddenRows: Set<number> = new Set(),
+  hiddenCols: Set<number> = new Set(),
 ): ("left" | "center" | "right")[] {
   const dataStartRow = opts.headerRow ? startRow + 1 : startRow;
   const colCount = endCol - startCol + 1;
@@ -186,11 +207,16 @@ function inferColumnAlignments(
 
   for (let ci = 0; ci < colCount; ci++) {
     const c = startCol + ci;
+    if (hiddenCols.has(c)) {
+      result.push("left");
+      continue;
+    }
     let explicit: "left" | "center" | "right" | undefined;
     let hasValue = false;
     let allNumeric = true;
 
     for (let r = dataStartRow; r <= endRow; r++) {
+      if (hiddenRows.has(r)) continue;
       const addr = XLSX.utils.encode_cell({ r, c });
       if (mergeChildSet.has(addr)) continue;
 
