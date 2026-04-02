@@ -109,6 +109,21 @@ describe("multi-sheet handling", () => {
     expect(sheets.map((s) => s.name)).toEqual(["Alpha", "Gamma"]);
   });
 
+  it("throws when filtering by non-existent sheet name", () => {
+    const wb = buildWorkbook([
+      {
+        name: "Alpha",
+        data: [
+          ["a", "b"],
+          [1, 2],
+        ],
+      },
+    ]);
+    expect(() => convertWorkbook(wb, { sheets: ["NonExistent"] })).toThrow(
+      'Sheet "NonExistent" not found',
+    );
+  });
+
   it("filters sheets by index", () => {
     const wb = buildWorkbook([
       {

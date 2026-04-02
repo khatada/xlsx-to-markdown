@@ -364,6 +364,32 @@ describe("table rendering (HTML)", () => {
     );
   });
 
+  it("renders center-aligned cells with text-align: center style", () => {
+    const wb = XLSX.utils.book_new();
+    const centerAlign = { alignment: { horizontal: "center" } };
+    const ws: XLSX.WorkSheet = {
+      "!ref": "A1:B2",
+      A1: { t: "s", v: "Label" },
+      B1: { t: "s", v: "Status" },
+      A2: { t: "s", v: "Alice" },
+      B2: { t: "s", v: "Active", s: centerAlign } as XLSX.CellObject,
+    };
+    XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+    const { markdown } = convertWorkbook(wb);
+    expect(markdown).toBe(
+      `<table>
+    <tr>
+    <th>Label</th>
+    <th style="text-align: center">Status</th>
+    </tr>
+    <tr>
+    <td>Alice</td>
+    <td style="text-align: center">Active</td>
+    </tr>
+</table>`,
+    );
+  });
+
   it("renders all rows as td when headerRow is false", () => {
     const wb = buildWorkbook([
       {

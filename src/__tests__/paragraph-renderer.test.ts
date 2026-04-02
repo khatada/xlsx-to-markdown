@@ -49,6 +49,28 @@ describe("paragraph rendering", () => {
     expect(markdown).toBe("line1\nline2\nline3");
   });
 
+  it("renders bold text in paragraph using markdown syntax", () => {
+    const wb = XLSX.utils.book_new();
+    const ws: XLSX.WorkSheet = {
+      "!ref": "A1:A1",
+      A1: { t: "s", v: "important", s: { font: { bold: true } } } as XLSX.CellObject,
+    };
+    XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+    const { markdown } = convertWorkbook(wb, { richText: true });
+    expect(markdown).toBe("**important**");
+  });
+
+  it("renders italic text in paragraph using markdown syntax", () => {
+    const wb = XLSX.utils.book_new();
+    const ws: XLSX.WorkSheet = {
+      "!ref": "A1:A1",
+      A1: { t: "s", v: "emphasis", s: { font: { italic: true } } } as XLSX.CellObject,
+    };
+    XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+    const { markdown } = convertWorkbook(wb, { richText: true });
+    expect(markdown).toBe("_emphasis_");
+  });
+
   it("mixes text and table content in order", () => {
     const wb = buildWorkbook([
       {
