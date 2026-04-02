@@ -13,56 +13,12 @@ This file defines guidelines for Claude Code when working in this repository.
 
 ## Architecture Decision Records (ADR)
 
-### Reference
+Use the `/adr` skill for all ADR operations. Full rules, templates, and procedures are defined in `.claude/skills/adr/SKILL.md`.
 
-**Always read `docs/adr/README.md` before discussing any design/spec decision or starting implementation. This is an absolute rule.**
-The ADR list and statuses in `docs/adr/README.md` are the single source of truth.
-
-When to check:
-- When the user asks for design or specification advice (before implementation)
-- Before writing any code
-- When changing existing behavior
-
-### Update Rules
-
-Create or update an ADR whenever any of the following apply.
-**ADR updates must be included in the same commit as the code changes. Do not reply after completing a task without having done this.**
-
-| Type of change | Action |
-| --- | --- |
-| New design decision (library selection, algorithm, data structure, etc.) | Add a new ADR |
-| Change that overrides an existing decision | Update the existing ADR status to "Superseded (by ADR-XXXX)" and add a new ADR |
-| Change to detection heuristics | Add a new ADR |
-| Implementation change within scope of an existing decision | No ADR update needed. Change code and tests only |
-| Bug fix | No ADR update needed |
-
-### Creating a New ADR
-
-1. Assign a sequential number: max existing number + 1 in `docs/adr/`
-2. Filename: `NNNN-kebab-case-title.md`
-3. Use the following template:
-
-```markdown
-# ADR-NNNN: Title
-
-## Status
-
-Accepted
-
-## Context
-
-<!-- Background, requirements, and constraints that led to this decision -->
-
-## Decision
-
-<!-- What was chosen. Including a comparison of alternatives is recommended -->
-
-## Consequences
-
-<!-- Trade-offs, constraints, and future improvement points resulting from this decision -->
-```
-
-4. Append an entry to the table in `docs/adr/README.md` (no changes to CLAUDE.md needed)
+**Key rules:**
+- Always invoke the `adr` skill (proactive-check) before any design discussion or before writing code.
+- ADR updates must be in the same commit as code changes.
+- `docs/adr/README.md` is the single source of truth for ADR list and statuses.
 
 ## README Update Rules
 
@@ -87,6 +43,7 @@ npm run test:watch  # Run tests in watch mode
 npm run lint        # oxlint
 npm run fmt         # oxfmt (overwrite)
 npm run fmt:check   # Format check (for CI)
+npm run secretlint  # Scan for secrets
 ```
 
 ## Code Conventions
