@@ -158,6 +158,101 @@ Section 1: Introduction
 </table>
 ```
 
+### Recognized table patterns
+
+The table below summarises which layouts are detected as a table and which fall back to a paragraph.
+
+| Excel layout | Detected as | Reason |
+| --- | --- | --- |
+| 2+ columns × 2+ rows of data | **table** | Meets `minColumns` and `minRows` thresholds |
+| Single column of text | **paragraph** | Below `minColumns` (default 2) |
+| Single row of data | **paragraph** | Below `minRows` (default 2) |
+| Every row has colspan spanning all columns | **paragraph** | Each row renders as one cell — no tabular structure |
+| Header row has colspan, data rows have multiple cells | **table** | At least one row has 2+ visible cells |
+| Cells with `rowspan` spanning multiple rows | **table** | Rendered as `<td rowspan="N">` with no layout breakage |
+| Two blocks separated by an empty column | **two tables** | Column gap triggers independent region detection |
+
+#### Pattern: full-width colspan in all rows → paragraph
+
+When every row in a region is merged across all columns (e.g. a block of title-style cells), the region has no relational structure and is rendered as a paragraph instead of an HTML table.
+
+```
+     A        B        C
+1  [    Title spanning A:C    ]   ← colspan=3
+2  [  Subtitle spanning A:C   ]   ← colspan=3
+3  [  Content spanning A:C    ]   ← colspan=3
+```
+
+Output:
+
+```markdown
+Title
+
+Subtitle
+
+Content
+```
+
+#### Pattern: merged header row + normal data rows → table
+
+A full-width merged header (colspan) in the first row is fine as long as at least one data row has multiple cells.
+
+```
+     A        B        C
+1  [       Report Title       ]   ← colspan=3
+2   Name    Score    Grade        ← 3 normal cells
+3   Alice    90        A
+```
+
+Output:
+
+```html
+<table>
+    <tr>
+    <th colspan="3">Report Title</th>
+    </tr>
+    <tr>
+    <td>Name</td>
+    <td style="text-align: right">Score</td>
+    <td>Grade</td>
+    </tr>
+    <tr>
+    <td>Alice</td>
+    <td style="text-align: right">90</td>
+    <td>A</td>
+    </tr>
+</table>
+```
+
+#### Pattern: rowspan across rows → table
+
+Cells with `rowspan` are rendered using the `rowspan` attribute. Because `<thead>`/`<tbody>` are not emitted, a `<th rowspan="N">` that visually spans into data rows does not cause layout breakage.
+
+```
+     A        B        C
+1   Name    [  Period (B:C)  ]   ← B1:C1 colspan=2
+2  Alice     Q1               ← A2:A3 rowspan=2
+3             Q2
+```
+
+Output:
+
+```html
+<table>
+    <tr>
+    <th>Name</th>
+    <th colspan="2">Period</th>
+    </tr>
+    <tr>
+    <td rowspan="2">Alice</td>
+    <td>Q1</td>
+    </tr>
+    <tr>
+    <td>Q2</td>
+    </tr>
+</table>
+```
+
 ## Rich Text
 
 When `richText: true` (default), cell formatting is converted:
