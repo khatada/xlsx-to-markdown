@@ -204,11 +204,7 @@ describe("detectRegions", () => {
 
     it("when useBorders is false, leading dense rows are classified as table", () => {
       const noBorderOpts = resolveOptions({ tableDetection: { useBorders: false } });
-      const rows = [
-        noBorder(0, [0, 1, 2]),
-        vBorder(1, [0, 1, 2]),
-        vBorder(2, [0, 1, 2]),
-      ];
+      const rows = [noBorder(0, [0, 1, 2]), vBorder(1, [0, 1, 2]), vBorder(2, [0, 1, 2])];
       const regions = detectRegions(rows, noBorderOpts);
       expect(regions).toHaveLength(1);
       expect(regions[0].type).toBe("table");
@@ -247,11 +243,51 @@ describe("detectRegions", () => {
     // Two separate table regions
     expect(sheets[0].regions).toHaveLength(2);
     expect(sheets[0].regions.every((r) => r.type === "table")).toBe(true);
-    // Two <table> elements in the output
-    expect(sheets[0].markdown.match(/<table>/g)?.length).toBe(2);
-    // Each table's headers are present
-    expect(sheets[0].markdown).toContain("Name");
-    expect(sheets[0].markdown).toContain("Item");
+    expect(sheets[0].markdown).toBe(
+      `<table>
+  <thead>
+    <tr>
+    <th>Name</th>
+    <th style="text-align: right">Score</th>
+    <th>Grade</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+    <td>Alice</td>
+    <td style="text-align: right">90</td>
+    <td>A</td>
+    </tr>
+    <tr>
+    <td>Bob</td>
+    <td style="text-align: right">75</td>
+    <td>B</td>
+    </tr>
+  </tbody>
+</table>
+
+<table>
+  <thead>
+    <tr>
+    <th>Item</th>
+    <th style="text-align: right">Qty</th>
+    <th style="text-align: right">Price</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+    <td>Apple</td>
+    <td style="text-align: right">5</td>
+    <td style="text-align: right">100</td>
+    </tr>
+    <tr>
+    <td>Banana</td>
+    <td style="text-align: right">3</td>
+    <td style="text-align: right">60</td>
+    </tr>
+  </tbody>
+</table>`,
+    );
   });
 
   describe("issue 1: hidden rows and columns are excluded", () => {
@@ -269,8 +305,22 @@ describe("detectRegions", () => {
       };
       XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
       const { sheets } = convertWorkbook(wb);
-      expect(sheets[0].markdown).not.toContain("secret");
-      expect(sheets[0].markdown).toContain("R3");
+      expect(sheets[0].markdown).toBe(
+        `<table>
+  <thead>
+    <tr>
+    <th>H1</th>
+    <th>H2</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+    <td>R3</td>
+    <td>R3</td>
+    </tr>
+  </tbody>
+</table>`,
+      );
     });
 
     it("hidden columns are not included in region detection", () => {
@@ -287,8 +337,7 @@ describe("detectRegions", () => {
       };
       XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
       const { sheets } = convertWorkbook(wb);
-      expect(sheets[0].markdown).not.toContain("Hidden");
-      expect(sheets[0].markdown).toContain("Visible");
+      expect(sheets[0].markdown).toBe("Visible\n\nv1\n\nAlso visible\n\nv2");
     });
   });
 
@@ -310,9 +359,27 @@ describe("detectRegions", () => {
       };
       XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
       const { sheets } = convertWorkbook(wb);
-      // Title row should be dense (3 spanned cols >= minColumns=2) → table or paragraph
-      // but crucially it should appear in the output
-      expect(sheets[0].markdown).toContain("Title spanning 3 cols");
+      expect(sheets[0].markdown).toBe(
+        `<table>
+  <thead>
+    <tr>
+    <th colspan="3">Title spanning 3 cols</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+    <td>r1c1</td>
+    <td>r1c2</td>
+    <td>r1c3</td>
+    </tr>
+    <tr>
+    <td>r2c1</td>
+    <td>r2c2</td>
+    <td>r2c3</td>
+    </tr>
+  </tbody>
+</table>`,
+      );
     });
   });
 });

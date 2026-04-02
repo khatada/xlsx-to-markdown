@@ -1,0 +1,3 @@
+npm run fmt
+git add src/
+npm run lint

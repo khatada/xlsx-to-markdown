@@ -16,12 +16,26 @@ describe("table rendering (HTML)", () => {
       },
     ]);
     const { markdown } = convertWorkbook(wb);
-    expect(markdown).toContain("<table>");
-    expect(markdown).toContain("<thead>");
-    expect(markdown).toContain("<th>Name</th>");
-    expect(markdown).toContain("<tbody>");
-    expect(markdown).toContain("<td>Alice</td>");
-    expect(markdown).toContain("<td>Bob</td>");
+    expect(markdown).toBe(
+      `<table>
+  <thead>
+    <tr>
+    <th>Name</th>
+    <th style="text-align: right">Age</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+    <td>Alice</td>
+    <td style="text-align: right">30</td>
+    </tr>
+    <tr>
+    <td>Bob</td>
+    <td style="text-align: right">25</td>
+    </tr>
+  </tbody>
+</table>`,
+    );
   });
 
   it("right-aligns numeric columns via style attribute", () => {
@@ -36,8 +50,26 @@ describe("table rendering (HTML)", () => {
       },
     ]);
     const { markdown } = convertWorkbook(wb);
-    // Price column is all numbers → right-aligned
-    expect(markdown).toContain('style="text-align: right"');
+    expect(markdown).toBe(
+      `<table>
+  <thead>
+    <tr>
+    <th>Item</th>
+    <th style="text-align: right">Price</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+    <td>Apple</td>
+    <td style="text-align: right">100</td>
+    </tr>
+    <tr>
+    <td>Banana</td>
+    <td style="text-align: right">200</td>
+    </tr>
+  </tbody>
+</table>`,
+    );
   });
 
   it("renders multiple tables on one sheet", () => {
@@ -55,8 +87,37 @@ describe("table rendering (HTML)", () => {
     ]);
     const { sheets, markdown } = convertWorkbook(wb);
     expect(sheets[0].regions.filter((r) => r.type === "table").length).toBe(2);
-    // Both tables are rendered as HTML
-    expect(markdown.match(/<table>/g)?.length).toBe(2);
+    expect(markdown).toBe(
+      `<table>
+  <thead>
+    <tr>
+    <th style="text-align: right">A</th>
+    <th style="text-align: right">B</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+    <td style="text-align: right">1</td>
+    <td style="text-align: right">2</td>
+    </tr>
+  </tbody>
+</table>
+
+<table>
+  <thead>
+    <tr>
+    <th style="text-align: right">X</th>
+    <th style="text-align: right">Y</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+    <td style="text-align: right">3</td>
+    <td style="text-align: right">4</td>
+    </tr>
+  </tbody>
+</table>`,
+    );
   });
 
   it("escapes HTML special characters in cell values", () => {
@@ -70,12 +131,25 @@ describe("table rendering (HTML)", () => {
       },
     ]);
     const { markdown } = convertWorkbook(wb);
-    expect(markdown).toContain("a&lt;b&gt;&amp;c");
-    expect(markdown).toContain("&quot;quoted&quot;");
+    expect(markdown).toBe(
+      `<table>
+  <thead>
+    <tr>
+    <th>Col1</th>
+    <th>Col2</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+    <td>a&lt;b&gt;&amp;c</td>
+    <td>&quot;quoted&quot;</td>
+    </tr>
+  </tbody>
+</table>`,
+    );
   });
 
   it("renders merged cells with colspan and rowspan", () => {
-    // Build a workbook with merged cells manually
     const wb = XLSX.utils.book_new();
     const ws: XLSX.WorkSheet = {
       "!ref": "A1:C3",
@@ -94,13 +168,28 @@ describe("table rendering (HTML)", () => {
       ],
     };
     XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
-
     const { markdown } = convertWorkbook(wb);
-    expect(markdown).toContain('colspan="2"');
-    expect(markdown).toContain('rowspan="2"');
-    // A3 is a merge child — should not appear as a <td>
-    const rows = markdown.match(/<tr>/g);
-    expect(rows).not.toBeNull();
+    expect(markdown).toBe(
+      `<table>
+  <thead>
+    <tr>
+    <th colspan="2">Header</th>
+    <th style="text-align: right">Right</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+    <td rowspan="2">Span</td>
+    <td style="text-align: right">10</td>
+    <td style="text-align: right">20</td>
+    </tr>
+    <tr>
+    <td style="text-align: right">30</td>
+    <td style="text-align: right">40</td>
+    </tr>
+  </tbody>
+</table>`,
+    );
   });
 
   it("converts newlines inside a cell to <br> tags", () => {
@@ -114,7 +203,22 @@ describe("table rendering (HTML)", () => {
     };
     XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
     const { markdown } = convertWorkbook(wb);
-    expect(markdown).toContain("line1<br>line2");
+    expect(markdown).toBe(
+      `<table>
+  <thead>
+    <tr>
+    <th>Header</th>
+    <th>Note</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+    <td>Alice</td>
+    <td>line1<br>line2</td>
+    </tr>
+  </tbody>
+</table>`,
+    );
   });
 
   it("renders formula cell using computed value, not formula string", () => {
@@ -130,9 +234,24 @@ describe("table rendering (HTML)", () => {
     };
     XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
     const { markdown } = convertWorkbook(wb);
-    expect(markdown).toContain("<td");
-    expect(markdown).toContain("30");
-    expect(markdown).not.toContain("A2+B2");
+    expect(markdown).toBe(
+      `<table>
+  <thead>
+    <tr>
+    <th style="text-align: right">A</th>
+    <th style="text-align: right">B</th>
+    <th style="text-align: right">Sum</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+    <td style="text-align: right">10</td>
+    <td style="text-align: right">20</td>
+    <td style="text-align: right">30</td>
+    </tr>
+  </tbody>
+</table>`,
+    );
   });
 
   it("uses emptyCell placeholder for empty table cells", () => {
@@ -148,8 +267,29 @@ describe("table rendering (HTML)", () => {
       },
     ]);
     const { markdown } = convertWorkbook(wb, { emptyCell: "—" });
-    // The empty B column cells should show the placeholder
-    expect(markdown).toContain("<td>—</td>");
+    expect(markdown).toBe(
+      `<table>
+  <thead>
+    <tr>
+    <th>A</th>
+    <th>B</th>
+    <th>C</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+    <td>val</td>
+    <td>—</td>
+    <td>x</td>
+    </tr>
+    <tr>
+    <td>foo</td>
+    <td>—</td>
+    <td>y</td>
+    </tr>
+  </tbody>
+</table>`,
+    );
   });
 
   it("omits thead and uses only tbody when headerRow is false", () => {
@@ -163,8 +303,19 @@ describe("table rendering (HTML)", () => {
       },
     ]);
     const { markdown } = convertWorkbook(wb, { headerRow: false });
-    expect(markdown).not.toContain("<thead>");
-    expect(markdown).toContain("<tbody>");
-    expect(markdown).toContain("<td>A</td>");
+    expect(markdown).toBe(
+      `<table>
+  <tbody>
+    <tr>
+    <td>A</td>
+    <td>B</td>
+    </tr>
+    <tr>
+    <td>1</td>
+    <td>2</td>
+    </tr>
+  </tbody>
+</table>`,
+    );
   });
 });
