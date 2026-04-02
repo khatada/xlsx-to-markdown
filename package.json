@@ -14,7 +14,8 @@
     "lint:fix": "oxlint src/ --fix",
     "fmt": "oxfmt src/",
     "fmt:check": "oxfmt src/ --check",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "prepare": "cp scripts/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit"
   },
   "keywords": [
     "xlsx",

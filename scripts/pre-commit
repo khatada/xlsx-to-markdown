@@ -1,0 +1,16 @@
+#!/bin/sh
+# Pre-commit hook: auto-format then lint.
+# Installed via: npm run prepare
+
+set -e
+
+# 1. Auto-format staged source files
+echo "Running formatter..."
+npm run fmt
+
+# Re-stage any files that were reformatted
+git add src/
+
+# 2. Lint check
+echo "Running linter..."
+npm run lint
