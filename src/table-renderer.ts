@@ -8,6 +8,46 @@ interface MergeSpan {
 }
 
 /**
+ * Return true if every visible row in the region renders as a single cell.
+ * This happens when every row has a colspan that spans the entire column range,
+ * leaving no structural tabular information. Such regions should be rendered
+ * as paragraphs rather than tables.
+ */
+export function isSingleCellPerRow(
+  startRow: number,
+  endRow: number,
+  startCol: number,
+  endCol: number,
+  merges: XLSX.Range[],
+  hiddenRows: Set<number> = new Set(),
+  hiddenCols: Set<number> = new Set(),
+): boolean {
+  // Build the set of merge child addresses inside this region
+  const mergeChildSet = new Set<string>();
+  for (const m of merges) {
+    if (m.s.r < startRow || m.s.r > endRow || m.s.c < startCol || m.s.c > endCol) continue;
+    for (let r = m.s.r; r <= m.e.r; r++) {
+      for (let c = m.s.c; c <= m.e.c; c++) {
+        if (r === m.s.r && c === m.s.c) continue;
+        mergeChildSet.add(XLSX.utils.encode_cell({ r, c }));
+      }
+    }
+  }
+
+  for (let r = startRow; r <= endRow; r++) {
+    if (hiddenRows.has(r)) continue;
+    let cellCount = 0;
+    for (let c = startCol; c <= endCol; c++) {
+      if (hiddenCols.has(c)) continue;
+      if (mergeChildSet.has(XLSX.utils.encode_cell({ r, c }))) continue;
+      cellCount++;
+    }
+    if (cellCount > 1) return false;
+  }
+  return true;
+}
+
+/**
  * Render a table region as an HTML table with full colspan/rowspan support.
  *
  * @param ws       - The worksheet
@@ -65,9 +105,8 @@ export function renderTable(
 
   const lines: string[] = ["<table>"];
 
-  // --- <thead> ---
+  // --- header row ---
   if (opts.headerRow && !hiddenRows.has(startRow)) {
-    lines.push("  <thead>");
     lines.push(
       renderHtmlRow(
         ws,
@@ -82,11 +121,9 @@ export function renderTable(
         hiddenCols,
       ),
     );
-    lines.push("  </thead>");
   }
 
-  // --- <tbody> ---
-  lines.push("  <tbody>");
+  // --- data rows ---
   const dataStartRow = opts.headerRow ? startRow + 1 : startRow;
   for (let r = dataStartRow; r <= endRow; r++) {
     if (hiddenRows.has(r)) continue;
@@ -105,7 +142,6 @@ export function renderTable(
       ),
     );
   }
-  lines.push("  </tbody>");
   lines.push("</table>");
 
   return lines.join("\n");

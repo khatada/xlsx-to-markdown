@@ -22,23 +22,19 @@ Change table regions to output as **HTML tables** (`<table>`).
 
 ```html
 <table>
-  <thead>
-    <tr>
-      <th>Name</th>
-      <th colspan="2">Period</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td rowspan="2">Alice</td>
-      <td style="text-align: right">Q1</td>
-      <td style="text-align: right">Q2</td>
-    </tr>
-    <tr>
-      <td style="text-align: right">100</td>
-      <td style="text-align: right">200</td>
-    </tr>
-  </tbody>
+  <tr>
+    <th>Name</th>
+    <th colspan="2">Period</th>
+  </tr>
+  <tr>
+    <td rowspan="2">Alice</td>
+    <td style="text-align: right">Q1</td>
+    <td style="text-align: right">Q2</td>
+  </tr>
+  <tr>
+    <td style="text-align: right">100</td>
+    <td style="text-align: right">200</td>
+  </tr>
 </table>
 ```
 
@@ -49,8 +45,10 @@ Change table regions to output as **HTML tables** (`<table>`).
 
 ### Header row
 
-- `headerRow: true` (default): Render the first row as `<th>` within `<thead>`
-- `headerRow: false`: Do not output `<thead>`; render all rows as `<td>` within `<tbody>`
+- `headerRow: true` (default): Render the first row as `<th>`
+- `headerRow: false`: Render all rows as `<td>`
+
+`<thead>` and `<tbody>` are not output. When a `<th>` cell has `rowspan` that spans into lower rows, wrapping in `<thead>`/`<tbody>` causes layout breakage in browsers and renderers; omitting them avoids this problem entirely.
 
 ### Alignment
 

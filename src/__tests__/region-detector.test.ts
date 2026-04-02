@@ -245,14 +245,11 @@ describe("detectRegions", () => {
     expect(sheets[0].regions.every((r) => r.type === "table")).toBe(true);
     expect(sheets[0].markdown).toBe(
       `<table>
-  <thead>
     <tr>
     <th>Name</th>
     <th style="text-align: right">Score</th>
     <th>Grade</th>
     </tr>
-  </thead>
-  <tbody>
     <tr>
     <td>Alice</td>
     <td style="text-align: right">90</td>
@@ -263,18 +260,14 @@ describe("detectRegions", () => {
     <td style="text-align: right">75</td>
     <td>B</td>
     </tr>
-  </tbody>
 </table>
 
 <table>
-  <thead>
     <tr>
     <th>Item</th>
     <th style="text-align: right">Qty</th>
     <th style="text-align: right">Price</th>
     </tr>
-  </thead>
-  <tbody>
     <tr>
     <td>Apple</td>
     <td style="text-align: right">5</td>
@@ -285,7 +278,6 @@ describe("detectRegions", () => {
     <td style="text-align: right">3</td>
     <td style="text-align: right">60</td>
     </tr>
-  </tbody>
 </table>`,
     );
   });
@@ -307,18 +299,14 @@ describe("detectRegions", () => {
       const { sheets } = convertWorkbook(wb);
       expect(sheets[0].markdown).toBe(
         `<table>
-  <thead>
     <tr>
     <th>H1</th>
     <th>H2</th>
     </tr>
-  </thead>
-  <tbody>
     <tr>
     <td>R3</td>
     <td>R3</td>
     </tr>
-  </tbody>
 </table>`,
       );
     });
@@ -470,12 +458,9 @@ describe("detectRegions", () => {
       const { sheets } = convertWorkbook(wb);
       expect(sheets[0].markdown).toBe(
         `<table>
-  <thead>
     <tr>
     <th colspan="3">Title spanning 3 cols</th>
     </tr>
-  </thead>
-  <tbody>
     <tr>
     <td>r1c1</td>
     <td>r1c2</td>
@@ -486,7 +471,6 @@ describe("detectRegions", () => {
     <td>r2c2</td>
     <td>r2c3</td>
     </tr>
-  </tbody>
 </table>`,
       );
     });

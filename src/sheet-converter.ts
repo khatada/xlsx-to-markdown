@@ -1,7 +1,7 @@
 import * as XLSX from "xlsx";
 import type { Region, ResolvedOptions, RowInfo, SheetResult } from "./types.js";
 import { detectRegions } from "./region-detector.js";
-import { renderTable } from "./table-renderer.js";
+import { renderTable, isSingleCellPerRow } from "./table-renderer.js";
 import { renderParagraph } from "./paragraph-renderer.js";
 
 /**
@@ -156,7 +156,18 @@ export function convertSheet(
   const regions: Region[] = rawRegions.map((raw) => {
     let markdown = "";
 
-    if (raw.type === "table") {
+    if (
+      raw.type === "table" &&
+      !isSingleCellPerRow(
+        raw.startRow,
+        raw.endRow,
+        raw.startCol,
+        raw.endCol,
+        merges,
+        hiddenRows,
+        hiddenCols,
+      )
+    ) {
       markdown = renderTable(
         ws,
         raw.startRow,
