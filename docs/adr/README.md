@@ -19,6 +19,7 @@ This directory records design decisions for the xlsx-to-md library in ADR (Archi
 | [0013](0013-hyperlink-formula-extraction.md) | Extract destination URL from =HYPERLINK() formula | Accepted |
 | [0014](0014-treat-bordered-and-autofiltered-empty-cells-as-non-empty.md) | Treat empty cells meeting border/autofilter conditions as non-empty | Accepted |
 | [0015](0015-secretlint-pre-commit.md) | Run secretlint as a pre-commit hook and in CI to prevent secret leaks | Accepted |
+| [0016](0016-single-cell-per-row-renders-as-paragraph.md) | Render single-visible-cell-per-row table regions as paragraphs | Accepted |
 
 ## ADR Format
 

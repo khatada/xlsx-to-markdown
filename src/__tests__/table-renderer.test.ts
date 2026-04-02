@@ -256,6 +256,52 @@ describe("table rendering (HTML)", () => {
     );
   });
 
+  it("renders as paragraph when every row has only one visible cell due to colspan", () => {
+    // All rows have a single cell with colspan spanning all 3 columns
+    const wb = XLSX.utils.book_new();
+    const ws: XLSX.WorkSheet = {
+      "!ref": "A1:C3",
+      A1: { t: "s", v: "Title" },
+      A2: { t: "s", v: "Subtitle" },
+      A3: { t: "s", v: "Content" },
+      "!merges": [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 2 } },
+        { s: { r: 1, c: 0 }, e: { r: 1, c: 2 } },
+        { s: { r: 2, c: 0 }, e: { r: 2, c: 2 } },
+      ],
+    };
+    XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+    const { markdown } = convertWorkbook(wb);
+    expect(markdown).toBe("Title\n\nSubtitle\n\nContent");
+  });
+
+  it("renders as table when at least one row has multiple visible cells", () => {
+    // Row 0: colspan=3 (1 cell), Row 1: 3 normal cells → should still be a table
+    const wb = XLSX.utils.book_new();
+    const ws: XLSX.WorkSheet = {
+      "!ref": "A1:C2",
+      A1: { t: "s", v: "Header" },
+      A2: { t: "s", v: "a" },
+      B2: { t: "s", v: "b" },
+      C2: { t: "s", v: "c" },
+      "!merges": [{ s: { r: 0, c: 0 }, e: { r: 0, c: 2 } }],
+    };
+    XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+    const { markdown } = convertWorkbook(wb);
+    expect(markdown).toBe(
+      `<table>
+    <tr>
+    <th colspan="3">Header</th>
+    </tr>
+    <tr>
+    <td>a</td>
+    <td>b</td>
+    <td>c</td>
+    </tr>
+</table>`,
+    );
+  });
+
   it("renders all rows as td when headerRow is false", () => {
     const wb = buildWorkbook([
       {
