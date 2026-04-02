@@ -129,6 +129,69 @@ describe("extractCellData", () => {
     });
   });
 
+  describe("rich text formatting", () => {
+    it("applies bold+italic markdown when both are set (richText enabled)", () => {
+      const richOpts = resolveOptions({ richText: true });
+      const cell = makeCell({
+        t: "s",
+        v: "important",
+        s: { font: { bold: true, italic: true } },
+      } as Partial<XLSX.CellObject>);
+      const data = extractCellData(cell, noMerges, "A1", richOpts);
+      expect(data.value).toBe("***important***");
+    });
+
+    it("does not apply bold+italic formatting when richText is disabled", () => {
+      const noRichOpts = resolveOptions({ richText: false });
+      const cell = makeCell({
+        t: "s",
+        v: "plain",
+        s: { font: { bold: true, italic: true } },
+      } as Partial<XLSX.CellObject>);
+      const data = extractCellData(cell, noMerges, "A1", noRichOpts);
+      expect(data.value).toBe("plain");
+    });
+  });
+
+  describe("numeric edge cases", () => {
+    it("renders negative numbers correctly", () => {
+      const cell = makeCell({ t: "n", v: -42 });
+      const data = extractCellData(cell, noMerges, "A1", opts);
+      expect(data.rawValue).toBe("-42");
+    });
+
+    it("renders negative number using formatted value when present", () => {
+      const cell = makeCell({ t: "n", v: -1234.56, w: "-1,234.56" });
+      const data = extractCellData(cell, noMerges, "A1", opts);
+      expect(data.rawValue).toBe("-1,234.56");
+    });
+  });
+
+  describe("hyperlink edge cases", () => {
+    it("extracts mailto: URL from HYPERLINK formula", () => {
+      const cell = makeCell({
+        t: "s",
+        v: "Contact us",
+        f: 'HYPERLINK("mailto:hello@example.com","Contact us")',
+        w: "Contact us",
+      });
+      const data = extractCellData(cell, noMerges, "A1", opts);
+      expect(data.value).toBe("[Contact us](mailto:hello@example.com)");
+    });
+
+    it("ignores cell.l when Target is empty string", () => {
+      const cell = makeCell({
+        t: "s",
+        v: "no link",
+        l: { Target: "" },
+      } as Partial<XLSX.CellObject>);
+      const data = extractCellData(cell, noMerges, "A1", opts);
+      // Empty Target should not produce a hyperlink
+      expect(data.value).toBe("no link");
+      expect(data.hyperlink).toBeUndefined();
+    });
+  });
+
   describe("merge detection", () => {
     it("marks child merged cells as isMergedChild", () => {
       const mergedChildren = new Set(["B1", "C1"]);

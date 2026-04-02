@@ -73,6 +73,16 @@ describe("detectRegions", () => {
     expect(regions.filter((r) => r.type === "table")).toHaveLength(2);
   });
 
+  it("respects custom minRows option — single row treated as table when minRows=1", () => {
+    const custom = resolveOptions({ tableDetection: { minRows: 1 } });
+    const rows = [
+      makeRowInfo(0, [0, 1, 2]), // 1 row with 3 cols — satisfies minRows=1
+    ];
+    const regions = detectRegions(rows, custom);
+    expect(regions).toHaveLength(1);
+    expect(regions[0].type).toBe("table");
+  });
+
   it("respects custom minColumns option", () => {
     const custom = resolveOptions({ tableDetection: { minColumns: 3 } });
     const rows = [
