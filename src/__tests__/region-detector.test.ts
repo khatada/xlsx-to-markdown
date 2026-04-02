@@ -204,11 +204,7 @@ describe("detectRegions", () => {
 
     it("when useBorders is false, leading dense rows are classified as table", () => {
       const noBorderOpts = resolveOptions({ tableDetection: { useBorders: false } });
-      const rows = [
-        noBorder(0, [0, 1, 2]),
-        vBorder(1, [0, 1, 2]),
-        vBorder(2, [0, 1, 2]),
-      ];
+      const rows = [noBorder(0, [0, 1, 2]), vBorder(1, [0, 1, 2]), vBorder(2, [0, 1, 2])];
       const regions = detectRegions(rows, noBorderOpts);
       expect(regions).toHaveLength(1);
       expect(regions[0].type).toBe("table");
