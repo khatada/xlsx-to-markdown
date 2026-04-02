@@ -1,35 +1,35 @@
-# ADR-0006: 複数シートがある場合に "## シート名" 見出しを自動挿入する
+# ADR-0006: Auto-insert "## Sheet Name" headings when multiple sheets are present
 
-## ステータス
+## Status
 
-採用済み
+Accepted
 
-## コンテキスト
+## Context
 
-ワークブックに複数のシートが含まれる場合、各シートのコンテンツをひとつの Markdown ドキュメントに結合するとどのシートの内容かが分からなくなる。
+When a workbook contains multiple sheets, combining the content of each sheet into a single Markdown document makes it impossible to tell which sheet the content belongs to.
 
-以下の動作選択肢を検討した：
+The following behavior options were considered:
 
-| 動作 | `sheetHeadings` 設定値 |
+| Behavior | `sheetHeadings` value |
 | --- | --- |
-| 常に見出しを追加しない | `false` |
-| 常に見出しを追加する | `true` |
-| シートが2枚以上あるときだけ追加する | `"auto"` |
+| Never add headings | `false` |
+| Always add headings | `true` |
+| Add headings only when there are 2 or more sheets | `"auto"` |
 
-## 決定
+## Decision
 
-デフォルトを `"auto"` とし、**シートが2枚以上のときのみ `## シート名` 見出しを自動挿入する**。
+Default to `"auto"` and **auto-insert `## Sheet Name` headings only when there are 2 or more sheets**.
 
-理由：
+Reasons:
 
-1. **1シートの場合**: 見出しが不要な場合が多い。見出しがあると出力 Markdown に余分な構造が加わり、既存ドキュメントへの貼り付けの邪魔になる
-2. **複数シートの場合**: シート名がコンテキストを与える重要な情報となるため、自動挿入が利便性を高める
-3. **ユーザーによる上書き**: `sheetHeadings: true` / `false` で常に強制できるため、`"auto"` はあくまでデフォルトの合理的な挙動
+1. **Single sheet**: Headings are usually unnecessary. Having a heading adds extra structure to the output Markdown and gets in the way when pasting into existing documents
+2. **Multiple sheets**: Sheet names provide important context, so auto-insertion increases usability
+3. **User override**: Since `sheetHeadings: true` / `false` can force the behavior, `"auto"` is simply the sensible default
 
-見出しレベルは `##`（h2）を採用した。h1 はドキュメントのタイトルとして予約されていることが多く、h2 からコンテンツが始まるパターンが一般的なため。
+Heading level `##` (h2) was chosen because h1 is often reserved as the document title, and it is common for content to start at h2.
 
-## 結果
+## Consequences
 
-- 単一シートのワークブックではデフォルトで見出しが付かないため、出力をそのまま別ドキュメントに埋め込みやすい
-- 複数シートのワークブックではシート名が h2 見出しになるため、目次の自動生成にも対応できる
-- シート名に Markdown の特殊文字（例: `#`, `*`）が含まれる場合、現状ではエスケープしていない。将来の改善点として記録する
+- Single-sheet workbooks have no heading by default, making it easy to embed the output directly into another document
+- Multi-sheet workbooks get sheet names as h2 headings, which can also be used for automatic table-of-contents generation
+- If sheet names contain Markdown special characters (e.g., `#`, `*`), they are not currently escaped. Recorded as a future improvement

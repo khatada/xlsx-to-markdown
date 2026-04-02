@@ -1,39 +1,39 @@
-# ADR-0001: XLSXパースライブラリに SheetJS (xlsx) を採用する
+# ADR-0001: Adopt SheetJS (xlsx) as the XLSX parsing library
 
-## ステータス
+## Status
 
-採用済み
+Accepted
 
-## コンテキスト
+## Context
 
-XLSXファイルをパースするためのライブラリを選定する必要がある。Node.jsエコシステムで利用可能な主な選択肢は以下の通り：
+A library for parsing XLSX files needs to be selected. The main options available in the Node.js ecosystem are:
 
-| ライブラリ | 週次DL数 (概算) | スタイル取得 | ブラウザ対応 | ライセンス |
+| Library | Weekly downloads (approx.) | Style access | Browser support | License |
 | --- | --- | --- | --- | --- |
-| `xlsx` (SheetJS CE) | ~1,000万 | 可 (cellStyles) | 可 | Apache-2.0 |
-| `exceljs` | ~200万 | 可 | 不可 | MIT |
-| `node-xlsx` | ~100万 | 不可 | 不可 | Apache-2.0 |
+| `xlsx` (SheetJS CE) | ~10M | Yes (cellStyles) | Yes | Apache-2.0 |
+| `exceljs` | ~2M | Yes | No | MIT |
+| `node-xlsx` | ~1M | No | No | Apache-2.0 |
 
-本ライブラリの要件：
+Requirements for this library:
 
-- セルの値だけでなく、**スタイル情報** (太字・イタリック・罫線・配置) を取得したい
-- **マージセル情報** (`!merges`) を取得したい
-- ブラウザでも動作させたい（将来的な拡張として）
-- バッファ (Buffer / Uint8Array) を直接読み込みたい
+- Retrieve not only cell values but also **style information** (bold, italic, borders, alignment)
+- Retrieve **merged cell information** (`!merges`)
+- Operate in the browser as well (as a future extension)
+- Read directly from a Buffer / Uint8Array
 
-## 決定
+## Decision
 
-`xlsx` (SheetJS Community Edition) を採用する。
+Adopt `xlsx` (SheetJS Community Edition).
 
-理由：
+Reasons:
 
-1. **スタイル情報の取得**: `XLSX.read(buf, { cellStyles: true })` オプションで `cell.s` にフォントや罫線情報が格納される。他のメジャーなライブラリで同等の情報を取得できるものが少ない。
-2. **エコシステム最大手**: 週次ダウンロード数・Stack Overflow での情報量ともに最多。
-3. **ユーティリティ関数の充実**: `encode_cell`, `decode_range`, `SSF.parse_date_code` など、アドレス計算・日付変換のヘルパーが揃っており実装コストを下げられる。
-4. **ブラウザ/Node.js 両対応**: 将来的に Web フロントエンドでの利用も可能。
+1. **Style information access**: The `XLSX.read(buf, { cellStyles: true })` option stores font and border information in `cell.s`. Few other major libraries can retrieve equivalent information.
+2. **Largest ecosystem**: Highest weekly download count and Stack Overflow coverage.
+3. **Rich utility functions**: Helpers like `encode_cell`, `decode_range`, and `SSF.parse_date_code` cover address calculation and date conversion, reducing implementation cost.
+4. **Browser/Node.js dual support**: Can also be used in web frontends in the future.
 
-## 結果
+## Consequences
 
-- `xlsx` パッケージに対する依存が発生する。SheetJS CE は Apache-2.0 ライセンスのため商用利用に問題なし。
-- `cellStyles: true` を有効にした場合、パースが若干遅くなる（大規模ファイルで数百ms程度）。これはスタイル情報を要するため受け入れる。
-- `cellDates: false` を指定し、日付をシリアル数値として受け取ることで `SSF.parse_date_code` による独自フォーマットを可能にする。
+- A dependency on the `xlsx` package is introduced. SheetJS CE is Apache-2.0 licensed, so there are no issues with commercial use.
+- Enabling `cellStyles: true` slightly slows down parsing (on the order of hundreds of milliseconds for large files). This is acceptable because style information is required.
+- Specifying `cellDates: false` receives dates as serial numbers, enabling custom formatting via `SSF.parse_date_code`.

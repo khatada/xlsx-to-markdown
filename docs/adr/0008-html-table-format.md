@@ -1,31 +1,31 @@
-# ADR-0008: テーブル出力形式を HTML に変更し colspan/rowspan を完全サポートする
+# ADR-0008: Change table output format to HTML with full colspan/rowspan support
 
-## ステータス
+## Status
 
-採用済み  
-ADR-0003 (GFM テーブル形式) および ADR-0005 (マージセルを空セルで代替) を差し替える。
+Accepted
+Supersedes ADR-0003 (GFM table format) and ADR-0005 (substitute merged cells with empty cells).
 
-## コンテキスト
+## Context
 
-[ADR-0003](0003-markdown-table-format.md) で GFM テーブル形式を採用したが、以下の制約が顕在化した：
+[ADR-0003](0003-markdown-table-format.md) adopted the GFM table format, but the following limitations became apparent:
 
-- **マージセルを表現できない**: GFM テーブルには colspan/rowspan の構文がなく、[ADR-0005](0005-merged-cell-handling.md) ではマージ子セルを空セルで代替する設計を採っていた。これにより、ヘッダースパンや縦方向の結合を持つ Excel 表が Markdown 上で不正確に表示される問題があった
-- **実ビジネス文書での頻度**: 請求書・報告書など実際の Excel ファイルではセル結合が多用されており、情報の欠損が許容できないケースが多い
+- **Cannot represent merged cells**: GFM tables have no colspan/rowspan syntax. [ADR-0005](0005-merged-cell-handling.md) adopted a design that substituted merged child cells with empty cells. As a result, Excel tables with header spans or vertical merges were displayed inaccurately in Markdown
+- **Frequency in real business documents**: Actual Excel files such as invoices and reports make heavy use of cell merging, and information loss is often unacceptable
 
-Markdown ドキュメント内に HTML を埋め込むことは CommonMark 仕様上許可されており、GitHub・GitLab・Notion・主要な静的サイトジェネレーターはいずれも Markdown 内の HTML テーブルをレンダリングする。
+Embedding HTML in Markdown documents is permitted by the CommonMark spec, and GitHub, GitLab, Notion, and major static site generators all render HTML tables inside Markdown.
 
-## 決定
+## Decision
 
-テーブル領域を **HTML テーブル** (`<table>`) として出力するよう変更する。
+Change table regions to output as **HTML tables** (`<table>`).
 
-### 出力構造
+### Output structure
 
 ```html
 <table>
   <thead>
     <tr>
-      <th>名前</th>
-      <th colspan="2">期間</th>
+      <th>Name</th>
+      <th colspan="2">Period</th>
     </tr>
   </thead>
   <tbody>
@@ -42,47 +42,47 @@ Markdown ドキュメント内に HTML を埋め込むことは CommonMark 仕�
 </table>
 ```
 
-### マージセルの扱い
+### Handling merged cells
 
-- マージ範囲の左上マスターセルに `colspan` / `rowspan` 属性を付与する
-- マージ子セル（マスター以外）は `<td>` / `<th>` 要素を**出力しない**（要素を省略することで colspan/rowspan が正しく機能する）
+- Add `colspan` / `rowspan` attributes to the top-left master cell of a merge range
+- Merged child cells (non-master) are **not output** as `<td>` / `<th>` elements (omitting the element makes colspan/rowspan work correctly)
 
-### ヘッダー行
+### Header row
 
-- `headerRow: true`（デフォルト）: 先頭行を `<thead>` 内の `<th>` としてレンダリング
-- `headerRow: false`: `<thead>` を出力せず全行を `<tbody>` 内の `<td>` としてレンダリング
+- `headerRow: true` (default): Render the first row as `<th>` within `<thead>`
+- `headerRow: false`: Do not output `<thead>`; render all rows as `<td>` within `<tbody>`
 
-### アライメント
+### Alignment
 
-- 数値列の自動右揃え推論（[ADR-0004](0004-column-alignment-inference.md)）は維持
-- 配置は GFM のセパレータ記法ではなく `style="text-align: right/center"` 属性で表現
-- デフォルト（左揃え）は `style` 属性を省略してシンプルに保つ
+- Automatic right-alignment inference for numeric columns ([ADR-0004](0004-column-alignment-inference.md)) is preserved
+- Alignment is expressed with `style="text-align: right/center"` attributes rather than GFM separator notation
+- Default (left-aligned) is kept simple by omitting the `style` attribute
 
-### HTML エスケープ
+### HTML escaping
 
-セル値内の `&` → `&amp;`、`<` → `&lt;`、`>` → `&gt;`、`"` → `&quot;` をエスケープする。
+Escape `&` → `&amp;`, `<` → `&lt;`, `>` → `&gt;`, `"` → `&quot;` in cell values.
 
-### リッチテキスト
+### Rich text
 
-段落レンダラーは引き続き Markdown 記法（`**bold**`, `_italic_`）を使用するため、`CellData` に `rawValue`（書式未適用の生テキスト）フィールドを追加し、テーブルレンダラーはこれをもとに HTML タグ（`<strong>`, `<em>`, `<a>`）を付与する。
+Since the paragraph renderer continues to use Markdown syntax (`**bold**`, `_italic_`), a `rawValue` field (raw text without format applied) is added to `CellData`, and the table renderer uses this to apply HTML tags (`<strong>`, `<em>`, `<a>`).
 
-| 書式 | HTML 出力 |
+| Format | HTML output |
 | --- | --- |
-| 太字 | `<strong>text</strong>` |
-| イタリック | `<em>text</em>` |
-| 太字 + イタリック | `<strong><em>text</em></strong>` |
-| ハイパーリンク | `<a href="url">text</a>` |
+| Bold | `<strong>text</strong>` |
+| Italic | `<em>text</em>` |
+| Bold + Italic | `<strong><em>text</em></strong>` |
+| Hyperlink | `<a href="url">text</a>` |
 
-## 結果
+## Consequences
 
-### メリット
+### Benefits
 
-- Excel のセル結合（colspan/rowspan）を完全に再現できる
-- GitHub、GitLab、Notion などの主要ツールで正確にレンダリングされる
-- 将来的に `<colgroup>` による列幅指定など追加のスタイリングが可能
+- Excel cell merging (colspan/rowspan) can be fully reproduced
+- Renders accurately in major tools such as GitHub, GitLab, and Notion
+- Future styling additions such as column widths via `<colgroup>` are possible
 
-### トレードオフ
+### Trade-offs
 
-- **可読性の低下**: GFM テーブルと比較して Markdown ファイル上でプレーンテキストとして読む場合に見づらい
-- **パーサー依存**: HTML ブロックをサポートしない一部の Markdown パーサーでは `<table>` がそのまま表示される可能性がある。ただし CommonMark 準拠のパーサーは全てサポートする
-- **インデント**: 読みやすさのため 2 スペースインデントで出力するが、ミニファイ要件がある場合は別途処理が必要
+- **Reduced readability**: Compared to GFM tables, the Markdown file is harder to read as plain text
+- **Parser dependency**: Some Markdown parsers that do not support HTML blocks may display `<table>` as-is. However, all CommonMark-compliant parsers support it
+- **Indentation**: Output uses 2-space indentation for readability; additional processing is needed if minification is required

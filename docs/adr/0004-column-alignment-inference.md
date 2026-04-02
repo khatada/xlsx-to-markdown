@@ -1,40 +1,40 @@
-# ADR-0004: 数値列を自動で右揃えに推論する
+# ADR-0004: Automatically infer right-alignment for numeric columns
 
-## ステータス
+## Status
 
-採用済み
+Accepted
 
-## コンテキスト
+## Context
 
-GFM テーブルのセパレータ行では列ごとに配置を指定できる。Excel セルには「配置」設定が存在するが、デフォルト（General）配置のセルは明示的な左右指定がなく、数値は右揃え・文字列は左揃えで表示される。
+The separator row in a GFM table allows per-column alignment to be specified. Excel cells have an "alignment" setting, but cells with the default (General) alignment have no explicit left/right specification — numbers are displayed right-aligned and strings left-aligned.
 
-出力する Markdown で配置情報をどのように扱うかを決める必要がある。
+A decision is needed on how to handle alignment information in the Markdown output.
 
-## 決定
+## Decision
 
-以下の優先順位で列アライメントを決定する：
+Determine column alignment using the following priority order:
 
-1. **セルの明示的なアライメント設定** (`cell.s.alignment.horizontal`) が存在する場合はそれを使う
-2. データ列（ヘッダー行を除く）の全非空セルが数値パターン (`/^-?[\d,]+(\.\d+)?%?$/`) にマッチする場合は **右揃え** (`---:`) とする
-3. 上記以外は **左揃え** (`---`) とする
+1. If an **explicit alignment setting** (`cell.s.alignment.horizontal`) exists on the cell, use it
+2. If all non-empty cells in the data column (excluding the header row) match the numeric pattern (`/^-?[\d,]+(\.\d+)?%?$/`), use **right-alignment** (`---:`)
+3. Otherwise use **left-alignment** (`---`)
 
-中央揃えは明示的な設定がある場合のみ適用し、自動推論では使用しない。
+Center-alignment is only applied when explicitly set; it is not used in automatic inference.
 
-### 数値判定の対象パターン
+### Numeric pattern targets
 
-| 値の例 | 判定 |
+| Value example | Judgment |
 | --- | --- |
-| `1234` | 数値 |
-| `-5.6` | 数値 |
-| `1,234,567` | 数値（カンマ区切り） |
-| `98.5%` | 数値（パーセント） |
-| `¥1,000` | 非数値（通貨記号含む） |
-| `N/A` | 非数値 |
+| `1234` | Numeric |
+| `-5.6` | Numeric |
+| `1,234,567` | Numeric (comma-separated) |
+| `98.5%` | Numeric (percent) |
+| `¥1,000` | Non-numeric (contains currency symbol) |
+| `N/A` | Non-numeric |
 
-通貨記号や単位が含まれる場合は非数値とみなし左揃えとする。これは SheetJS が数値をフォーマット済み文字列 (`cell.w`) として返す場合、通貨記号や単位が付くケースがあるためである。
+Values containing currency symbols or units are treated as non-numeric and left-aligned. This is because when SheetJS returns numbers as formatted strings (`cell.w`), they may include currency symbols or units.
 
-## 結果
+## Consequences
 
-- ユーザーが Excel 側で配置を明示している場合はそれが反映される
-- 数値列が自動で右揃えになるため、数字が桁揃えされた状態でレンダリングされる
-- 通貨記号付きの金額列（`¥1,000`）は左揃えになる。これを右揃えにしたい場合は Excel 側でセルの配置を明示的に右揃えに設定する必要がある
+- If the user has explicitly set alignment in Excel, it is reflected in the output
+- Numeric columns are automatically right-aligned, so numbers render with digit alignment
+- Currency columns with currency symbols (e.g., `¥1,000`) will be left-aligned. To right-align these, the cell alignment must be explicitly set to right in Excel

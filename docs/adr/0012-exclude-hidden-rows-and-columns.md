@@ -1,33 +1,33 @@
-# ADR-0012: 非表示行・列を変換出力から除外する
+# ADR-0012: Exclude hidden rows and columns from conversion output
 
-## ステータス
+## Status
 
-採用済み
+Accepted
 
-## コンテキスト
+## Context
 
-Excel では行・列を非表示（hidden）に設定できる。非表示の行・列はスプレッドシート上に存在するが、印刷や画面表示では見えない。
+Excel allows rows and columns to be set as hidden. Hidden rows and columns exist in the spreadsheet but are invisible in print and screen display.
 
-変換前は非表示の行・列も Markdown に含まれていたため、意図せず機密データや補助データが出力に混入する問題があった。
+Before this change, hidden rows and columns were also included in the Markdown output, causing confidential or auxiliary data to unintentionally appear in the output.
 
-## 決定
+## Decision
 
-`ws['!rows'][r]?.hidden` および `ws['!cols'][c]?.hidden` が `true` の行・列を変換処理全体から除外する。
+Exclude rows and columns where `ws['!rows'][r]?.hidden` and `ws['!cols'][c]?.hidden` are `true` from the entire conversion process.
 
-除外は2段階で行う:
+Exclusion is performed in two stages:
 
-1. **領域検出フェーズ（`sheet-converter.ts`）**: `RowInfo` を構築する際に非表示行をスキップし、非表示列を `filledCols` に加えない。非表示行は `rowInfos` 配列に含まれないため、密度計算・領域境界の判定から外れる。
+1. **Region detection phase (`sheet-converter.ts`)**: Skip hidden rows when constructing `RowInfo` and do not add hidden columns to `filledCols`. Hidden rows are not included in the `rowInfos` array and are therefore excluded from density calculation and region boundary judgment.
 
-2. **レンダリングフェーズ（`renderTable` / `renderParagraph`）**: `hiddenRows` / `hiddenCols` を引数として受け取り、ループ内でスキップする。これにより、非表示行が領域の `startRow`〜`endRow` の範囲内に含まれていても出力されない。
+2. **Rendering phase (`renderTable` / `renderParagraph`)**: Receive `hiddenRows` / `hiddenCols` as arguments and skip them in loops. This ensures that hidden rows within the `startRow`–`endRow` range of a region are not output.
 
-## 結果
+## Consequences
 
-### メリット
+### Benefits
 
-- 非表示の行・列がMD出力に現れなくなり、Excel の表示と一致する
-- 意図せず秘匿データが変換出力に含まれるリスクが減る
+- Hidden rows and columns no longer appear in the Markdown output, matching what Excel displays
+- The risk of confidential data unintentionally appearing in conversion output is reduced
 
-### トレードオフ
+### Trade-offs
 
-- 非表示行・列の内容を出力したいユースケース（データ移行など）には対応できない。必要な場合は Excel 側で非表示を解除してから変換する
-- 領域検出時に非表示行を「空行と同等」として扱うのではなく「存在しない行」として扱うため、非表示行を挟んで隣接する2行が同じバンドに入る。これは Excel の表示とは一致するが、データ構造が変わる可能性がある
+- Use cases that need to output hidden row/column content (e.g., data migration) are not supported. If needed, unhide the rows/columns in Excel before converting
+- Hidden rows are treated as "non-existent rows" rather than "rows equivalent to empty rows" during region detection, so two rows adjacent across a hidden row are placed in the same band. This matches Excel's display, but may change data structure

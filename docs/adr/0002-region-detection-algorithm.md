@@ -1,53 +1,53 @@
-# ADR-0002: 領域検出アルゴリズムに「行密度スキャン」を採用する
+# ADR-0002: Adopt "row density scan" for region detection algorithm
 
-## ステータス
+## Status
 
-差し替え済み (by [ADR-0010](0010-recursive-region-detection.md))
+Superseded (by [ADR-0010](0010-recursive-region-detection.md))
 
-## コンテキスト
+## Context
 
-XLSXシートは任意の位置にテーブルと文章が混在しうる。これらを自動識別するアルゴリズムを設計する必要がある。
+An XLSX sheet can contain a mixture of tables and text at arbitrary positions. An algorithm to automatically identify these needs to be designed.
 
-検討した主なアプローチ：
+Main approaches considered:
 
-### A. 罫線ベース検出
+### A. Border-based detection
 
-セルに罫線が付いている範囲をテーブルとみなす。
+Treat ranges where cells have borders as tables.
 
-- メリット: Excelで明示的に表組みされたデータを精度よく拾える
-- デメリット: 罫線なしで作られた表（テキストのみの表）を検出できない。スタイル情報なし (CSV から変換された xlsx 等) では機能しない
+- Pros: Can accurately detect data organized as a table in Excel
+- Cons: Cannot detect tables without borders (text-only tables). Does not work for files without style information (e.g., xlsx converted from CSV)
 
-### B. 正規表現・ヒューリスティックによる内容解析
+### B. Content analysis using regex / heuristics
 
-セル値が数値・日付のみの行をデータ行、文字列を含む行をヘッダーとして分類する。
+Classify rows containing only numbers and dates as data rows, and rows containing strings as headers.
 
-- メリット: セルの内容に基づく意味的な分類ができる
-- デメリット: 文章の中に数値が現れる場合や、テーブルの中に説明文セルがある場合に誤検出しやすい。実装の複雑度が高い
+- Pros: Can perform semantic classification based on cell content
+- Cons: Prone to false positives when numbers appear in paragraphs or when tables contain descriptive cells. High implementation complexity
 
-### C. 行密度スキャン（採用案）
+### C. Row density scan (chosen approach)
 
-各行の「埋まっているセル数」を計算し、一定数以上のセルが連続する矩形ブロックをテーブルとして検出する。
+Calculate the number of "filled cells" per row and detect rectangular blocks where a certain number of cells are continuously filled as tables.
 
-- メリット: シンプルかつ汎用的。スタイル情報に依存しない。閾値 (`minColumns`, `minRows`) でユーザーが調整できる
-- デメリット: 横に長い段落（複数列にまたがるテキスト）がテーブルに誤分類される可能性がある
+- Pros: Simple and general-purpose. Does not depend on style information. Users can adjust thresholds via `minColumns` and `minRows`
+- Cons: Wide paragraphs (text spanning multiple columns) may be misclassified as tables
 
-## 決定
+## Decision
 
-**C. 行密度スキャン**を採用する。
+Adopt **C. Row density scan**.
 
-アルゴリズム詳細：
+Algorithm details:
 
-1. 各行について、マージ子セルを除いた「有効セル数」を計算する
-2. 有効セル数が `minColumns`（デフォルト: 2）以上の行を **dense（密）**、未満を **sparse（疎）** と分類する
-3. 連続する dense 行のグループを取り出す。行間の列範囲に重複があることを確認し、重複がない場合は別グループとする
-4. dense グループの行数が `minRows`（デフォルト: 2）以上なら **テーブル**、未満なら **段落** に格下げする
-5. sparse 行の連続は **段落** とする
-6. 空行（有効セル数 = 0）は領域の区切りとして機能する
+1. For each row, calculate the "valid cell count" excluding merged child cells
+2. Classify rows where the valid cell count is ≥ `minColumns` (default: 2) as **dense**, and others as **sparse**
+3. Extract groups of consecutive dense rows. Verify that the column ranges within the gap overlap; if they don't, treat them as separate groups
+4. If the number of rows in a dense group is ≥ `minRows` (default: 2), classify as a **table**; otherwise downgrade to a **paragraph**
+5. Consecutive sparse rows are treated as **paragraphs**
+6. Empty rows (valid cell count = 0) act as region delimiters
 
-罫線情報 (`useBorders: true`) は将来的な補助ヒントとして設計に組み込まれているが、現実装では主要判定に使用していない。
+Border information (`useBorders: true`) is designed into the architecture as a future supplementary hint but is not used for primary judgment in the current implementation.
 
-## 結果
+## Consequences
 
-- ユーザーが `tableDetection.minColumns` / `tableDetection.minRows` を変更することで検出感度を調整できる
-- 横長の段落（例: 2列使ったキャプション）が意図せずテーブルに分類されるケースがある。この場合は `minColumns` を増やすか、間に空行を入れることで回避できる
-- スタイル情報が存在しないファイルでも動作する（最低限の機能は保証）
+- Users can adjust detection sensitivity by changing `tableDetection.minColumns` / `tableDetection.minRows`
+- Wide paragraphs (e.g., a caption spanning 2 columns) may unintentionally be classified as tables. This can be avoided by increasing `minColumns` or inserting an empty row
+- Works even for files without style information (minimum functionality is guaranteed)
