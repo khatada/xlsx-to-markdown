@@ -1,31 +1,32 @@
-# ADR-0014: 罫線・autofilter 条件を満たす空セルを非空として扱う
+# ADR-0014: Treat empty cells meeting border/autofilter conditions as non-empty
 
-## ステータス
+## Status
 
-採用済み
+Accepted
 
-## コンテキスト
+## Context
 
-Excel の ListObject（テーブル書式）を含むシートを変換すると、テーブル内の空セルが
-「空行」と見なされてテーブルが分断されたり、列密度が低下して段落と誤分類される問題が
-あった。
+When converting sheets containing Excel ListObjects (table format), empty cells inside the table were
+being treated as "empty rows", causing the table to be split or misclassified as a paragraph due
+to low column density.
 
-具体的には以下の 2 つのケースで誤検出が発生していた。
+Two specific cases were causing false detections:
 
-1. **左右両方の縦罫線を持つ空セル** — Excel テーブルスタイルでは列境界を示す縦罫線が
-   適用されることが多い。値を持たないセルにも罫線が付いているため、密度計算から除外
-   されるとテーブルが分断される。
+1. **Empty cells with both left and right vertical borders** — Excel table styles often apply vertical
+   borders to indicate column boundaries. Because empty cells also have borders, excluding them from
+   density calculation caused the table to be split.
 
-2. **`!autofilter` 範囲内の空セル** — SheetJS は Excel ListObject のメタデータを
-   `ws["!autofilter"].ref` に展開する。ListObject は必ずオートフィルタを持つため、
-   このプロパティの存在がテーブル範囲の信頼できるシグナルになる。
+2. **Empty cells within `!autofilter` range** — SheetJS expands Excel ListObject metadata into
+   `ws["!autofilter"].ref`. Because ListObjects always have an autofilter, the presence of this
+   property is a reliable signal of a table range.
 
-## 決定
+## Decision
 
-`sheet-converter.ts` の `filledCols` 構築ループに以下の 2 条件を追加し、値のない
-セルでもこれらを満たす場合は `filledCols` に追加して密度計算に含める。
+Add the following 2 conditions to the `filledCols` construction loop in `sheet-converter.ts` so that
+cells without values are added to `filledCols` and included in density calculation when they meet
+these conditions.
 
-### 条件 A — 左右両側の縦罫線（`useBorders` 有効時のみ）
+### Condition A — Both left and right vertical borders (only when `useBorders` is enabled)
 
 ```typescript
 if (
@@ -39,10 +40,10 @@ if (
 }
 ```
 
-- **左右両方** の罫線スタイルが存在する場合のみ適用する（片側のみは対象外）。
-- `useBorders: false` の場合は適用しない。
+- Only applies when **both** left and right border styles exist (one side only is excluded).
+- Not applied when `useBorders: false`.
 
-### 条件 B — `!autofilter` 範囲内
+### Condition B — Within `!autofilter` range
 
 ```typescript
 const autofilterRange = ws["!autofilter"]?.ref
@@ -57,14 +58,14 @@ const autofilterRange = ws["!autofilter"]?.ref
 }
 ```
 
-- オートフィルタは ListObject 以外（通常のオートフィルタ）にも付与できるが、
-  その場合もテーブルとして扱う方が自然であるため、区別せず適用する。
-- `useBorders` の設定に関わらず常に有効。
+- Autofilter can also be applied to non-ListObject ranges (plain autofilter), but treating those
+  as tables is also natural, so no distinction is made.
+- Always effective regardless of the `useBorders` setting.
 
-## 結果
+## Consequences
 
-- **改善**: Excel ListObject を含むシートでテーブルが正しく 1 つの領域として検出される。
-- **トレードオフ**: `!autofilter` が設定された範囲は、ユーザーの意図に関係なくテーブル
-  として扱われる。オートフィルタのみ（ListObject でない）のシートでも同様に適用される。
-- **将来の改善点**: SheetJS が `xl/tables/*.xml` を解析して `ws["!tables"]` を提供
-  するようになれば、より正確な ListObject 検出に切り替えられる。
+- **Improvement**: Sheets containing Excel ListObjects now correctly detect the table as a single region.
+- **Trade-off**: Ranges with `!autofilter` set are treated as tables regardless of the user's intent.
+  This also applies to sheets with autofilter only (non-ListObject).
+- **Future improvement**: Once SheetJS parses `xl/tables/*.xml` and provides `ws["!tables"]`,
+  switching to more accurate ListObject detection would be possible.

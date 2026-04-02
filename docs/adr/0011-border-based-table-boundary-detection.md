@@ -1,63 +1,63 @@
-# ADR-0011: 縦罫線（左右）を表境界検出の主要シグナルとして使用する
+# ADR-0011: Use vertical borders (left/right) as the primary signal for table boundary detection
 
-## ステータス
+## Status
 
-採用済み
+Accepted
 
-## コンテキスト
+## Context
 
-[ADR-0010](0010-recursive-region-detection.md) の `classifyBand` は行の「列密度」（`filledCount >= minColumns`）だけで表と段落を判別する。このアプローチには2つの問題がある。
+The `classifyBand` in [ADR-0010](0010-recursive-region-detection.md) distinguishes tables from paragraphs solely based on row "column density" (`filledCount >= minColumns`). This approach has two problems.
 
-**問題 1: 段落タイトルが表に取り込まれる**
+**Problem 1: Paragraph title gets pulled into a table**
 
-空行なしで表の直上にタイトル行があり、そのタイトルが多列にまたがる場合（密度が高い場合）、タイトル行が表の先頭行として誤検出される。
+When a title row sits directly above a table without an empty row, and that title spans multiple columns (high density), the title row is falsely detected as the first row of the table.
 
 ```
-行 0: "売上サマリー" | "2024年度" | "確定値"   ← 密度 3 → 表扱いになってしまう
-行 1:  "商品"        | "数量"     | "金額"      ← 表ヘッダー
-行 2:  "りんご"      | 5          | 500
+Row 0: "Sales Summary" | "FY2024" | "Final"    ← density 3 → treated as table
+Row 1:  "Product"      | "Qty"    | "Amount"   ← table header
+Row 2:  "Apple"        | 5        | 500
 ```
 
-**問題 2: 縦罫線のみの行が段落扱いになる**
+**Problem 2: Rows with only vertical borders are treated as paragraphs**
 
-Excelの表では横罫線（上下）は省略し、縦罫線（左右）だけで列構造を表現するスタイルがある。このような行は `filledCount` が `minColumns` 未満になることがあり、段落に格下げされる。
+Some Excel table styles express column structure with only vertical borders (left/right) and omit horizontal borders (top/bottom). Such rows may have a `filledCount` below `minColumns` and get downgraded to paragraphs.
 
-## 決定
+## Decision
 
-`RowInfo` に `hasVerticalBorder`（左または右の罫線を持つセルが行内に1つ以上ある）を追加し、`classifyBand` で以下の2つのルールを適用する。
+Add `hasVerticalBorder` (true if at least one cell in the row has a left or right border) to `RowInfo`, and apply the following two rules in `classifyBand`.
 
-### ルール 1: 表開始境界の検出
+### Rule 1: Detect table start boundary
 
-`useBorders: true`（デフォルト）の場合、バンド内に `hasVerticalBorder = true` の行が存在するとき、**最初の縦罫線行より前にある行をすべて段落として出力する**。これにより、タイトル行の密度にかかわらず表の開始位置が罫線で確定される。
+When `useBorders: true` (default), if a row with `hasVerticalBorder = true` exists in the band, **output all rows before the first vertical-border row as paragraphs**. This fixes the table start position by border regardless of title row density.
 
-### ルール 2: 表行の判定基準を拡張
+### Rule 2: Extend table row criteria
 
-`useBorders: true` の場合、行が「表候補」かどうかを次の条件で判定する：
+When `useBorders: true`, determine whether a row is a "table candidate" using the following condition:
 
 ```
 isTableCandidate(row) =
-  filledCount >= minColumns        // 従来の密度条件
-  || (useBorders && row.hasVerticalBorder)  // 縦罫線による条件追加
+  filledCount >= minColumns           // traditional density condition
+  || (useBorders && row.hasVerticalBorder)  // additional vertical-border condition
 ```
 
-これにより、横罫線がなく縦罫線のみの行も表の一部として扱われる。
+This allows rows with only vertical borders (no horizontal borders) to be treated as part of a table.
 
-### 横罫線（上下）を使わない理由
+### Why horizontal borders (top/bottom) are not used
 
-横罫線（top/bottom）はタイトル下線や区切り線として段落内でも使われるため、表の列構造を示すシグナルとして不適切。縦罫線（left/right）はセル間の列境界を表し、表レイアウトとの相関が高い。
+Horizontal borders (top/bottom) are also used as paragraph underlines or dividers, making them an inappropriate signal for column structure. Vertical borders (left/right) represent boundaries between cells and have a higher correlation with table layouts.
 
-### `useBorders: false` の場合のフォールバック
+### Fallback when `useBorders: false`
 
-`useBorders: false` を指定すれば従来の密度ベース分類のみが動作し、罫線情報は一切使用されない。
+Specifying `useBorders: false` causes only the traditional density-based classification to operate; border information is not used at all.
 
-## 結果
+## Consequences
 
-### メリット
+### Benefits
 
-- 空行区切りなしで表の上にあるタイトル・キャプション行が正しく段落として分類される
-- 縦罫線のみのスタイル（横罫線なし）でも表として正しく認識される
+- Title/caption rows above a table without an empty row are correctly classified as paragraphs
+- Tables using only vertical borders (no horizontal borders) are correctly recognized as tables
 
-### トレードオフ
+### Trade-offs
 
-- XLSX の cell styles（`cellStyles: true`）が必要。CSV やスタイル情報のない XLSX では `hasVerticalBorder` は常に `false` となり、密度ベース分類にフォールバックする（後退しない）
-- `useBorders: true`（デフォルト）の場合、縦罫線があると密度に関係なく表候補になる。意図的に縦罫線をつけた段落がある場合は `useBorders: false` で無効化できる
+- Requires XLSX cell styles (`cellStyles: true`). For CSV or XLSX without style information, `hasVerticalBorder` is always `false` and falls back to density-based classification (no regression)
+- With `useBorders: true` (default), any row with a vertical border becomes a table candidate regardless of density. Paragraphs that intentionally have vertical borders can be excluded by setting `useBorders: false`

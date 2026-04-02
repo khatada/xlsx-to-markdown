@@ -1,51 +1,51 @@
-# ADR-0009: リンターに oxlint、フォーマッターに oxfmt を採用する
+# ADR-0009: Adopt oxlint as linter and oxfmt as formatter
 
-## ステータス
+## Status
 
-採用済み
+Accepted
 
-## コンテキスト
+## Context
 
-コードの品質統一と一貫したスタイル維持のため、リンターとフォーマッターを導入する必要がある。TypeScript プロジェクトで一般的な選択肢は以下の通り：
+A linter and formatter need to be introduced to unify code quality and maintain consistent style. Common options for TypeScript projects are:
 
-| ツール | 役割 | 実装言語 | 備考 |
+| Tool | Role | Implementation language | Notes |
 | --- | --- | --- | --- |
-| ESLint + Prettier | リント + フォーマット | JavaScript | デファクトスタンダード。設定が複雑になりがち |
-| Biome | リント + フォーマット | Rust | 高速。ESLint 互換ルールを多数持つ |
-| oxlint | リント | Rust | Oxc プロジェクト製。ESLint 互換 |
-| oxfmt | フォーマット | Rust | Oxc プロジェクト製。Prettier 互換設定に対応 |
+| ESLint + Prettier | Lint + Format | JavaScript | De facto standard. Configuration tends to be complex |
+| Biome | Lint + Format | Rust | Fast. Has many ESLint-compatible rules |
+| oxlint | Lint | Rust | From the Oxc project. ESLint-compatible |
+| oxfmt | Format | Rust | From the Oxc project. Supports Prettier-compatible configuration |
 
-## 決定
+## Decision
 
-**リンターに oxlint、フォーマッターに oxfmt** を採用する。
+Adopt **oxlint as the linter and oxfmt as the formatter**.
 
-理由：
+Reasons:
 
-1. **高速**: いずれも Rust 製で、ESLint/Prettier と比較して数十倍高速に動作する
-2. **互換性**: oxlint は ESLint v8 の設定形式に準拠し、oxfmt は Prettier の設定からマイグレーション可能。既存の知識が流用できる
-3. **同一エコシステム**: 同じ Oxc プロジェクトのツールのため、将来的な統合（LSP 等）が期待できる
-4. **設定の軽量さ**: `.oxlintrc.json` / `.oxfmtrc.json` はデフォルトで実用的な設定が得られる
+1. **Fast**: Both are written in Rust and operate tens of times faster than ESLint/Prettier
+2. **Compatibility**: oxlint conforms to ESLint v8 configuration format; oxfmt can be migrated from Prettier configuration. Existing knowledge transfers
+3. **Same ecosystem**: Both tools come from the Oxc project, so future integration (LSP, etc.) is expected
+4. **Lightweight configuration**: `.oxlintrc.json` / `.oxfmtrc.json` provide practical defaults
 
-### 有効にしたルールカテゴリ (oxlint)
+### Enabled rule categories (oxlint)
 
-`correctness`（デフォルト）のみを `error` として有効化し、`suspicious` / `pedantic` 等は無効のままとする。過剰なノイズを避け、明らかに誤りのあるコードのみを検出する方針。
+Only `correctness` (default) is enabled as `error`; `suspicious` / `pedantic`, etc. remain disabled. The policy is to avoid excessive noise and only detect clearly incorrect code.
 
-プラグイン:
-- `typescript` — TypeScript 固有のルール
-- `unicorn` — モダンな JavaScript/TypeScript の慣用パターン
-- `oxc` — Oxc 独自ルール
+Plugins:
+- `typescript` — TypeScript-specific rules
+- `unicorn` — Modern JavaScript/TypeScript idiomatic patterns
+- `oxc` — Oxc-specific rules
 
 ### npm scripts
 
-| スクリプト | コマンド | 用途 |
+| Script | Command | Purpose |
 | --- | --- | --- |
-| `lint` | `oxlint src/` | リント（CI・ローカル共通） |
-| `lint:fix` | `oxlint src/ --fix` | 自動修正 |
-| `fmt` | `oxfmt src/` | フォーマット適用 |
-| `fmt:check` | `oxfmt src/ --check` | フォーマット確認（CI 用） |
+| `lint` | `oxlint src/` | Lint (CI and local) |
+| `lint:fix` | `oxlint src/ --fix` | Auto-fix |
+| `fmt` | `oxfmt src/` | Apply formatting |
+| `fmt:check` | `oxfmt src/ --check` | Verify formatting (for CI) |
 
-## 結果
+## Consequences
 
-- ESLint は `package.json` のスクリプトから削除した（依存パッケージとして存在していなかったため影響なし）
-- oxlint は ESLint の全ルールを網羅していないため、将来的に ESLint でしか検出できないルールが必要になった場合は両立を検討する
-- oxfmt の設定（`.oxfmtrc.json`）はデフォルトのままとしており、必要に応じて `printWidth` や `tabWidth` を調整できる
+- ESLint was removed from `package.json` scripts (it was not present as a dependency, so no impact)
+- oxlint does not cover all ESLint rules; if a rule that only ESLint can detect is needed in the future, running both in parallel can be considered
+- The oxfmt configuration (`.oxfmtrc.json`) is left at its defaults; `printWidth` and `tabWidth` can be adjusted as needed

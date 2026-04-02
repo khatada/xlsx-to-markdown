@@ -1,112 +1,121 @@
 # CLAUDE.md
 
-このファイルは Claude Code がこのリポジトリで作業する際のガイドラインを定義します。
+This file defines guidelines for Claude Code when working in this repository.
+
+## Language Rule
+
+**All documentation, comments, ADRs, and CLAUDE.md must be written in English.** This applies to:
+- Source code comments
+- ADR files (`docs/adr/`)
+- This file (CLAUDE.md)
+- Skill files (`.claude/skills/`)
+- README.md
 
 ## Architecture Decision Records (ADR)
 
-### 参照
+### Reference
 
-**仕様検討・実装着手の前に必ず `docs/adr/README.md` を読むこと。これは絶対ルールです。**
-ADR の一覧・ステータスは `docs/adr/README.md` が唯一の正とします。
+**Always read `docs/adr/README.md` before discussing any design/spec decision or starting implementation. This is an absolute rule.**
+The ADR list and statuses in `docs/adr/README.md` are the single source of truth.
 
-確認するタイミング:
-- ユーザーから設計・仕様の相談を受けたとき（実装前）
-- コードを書き始める前
-- 既存の挙動を変更しようとするとき
+When to check:
+- When the user asks for design or specification advice (before implementation)
+- Before writing any code
+- When changing existing behavior
 
-### 更新ルール
+### Update Rules
 
-以下のいずれかに該当する変更を行う場合は、ADR を作成または更新してください。
-**ADR の更新はコードと同じコミットに含めること。タスク完了後に忘れて返答しないこと。**
+Create or update an ADR whenever any of the following apply.
+**ADR updates must be included in the same commit as the code changes. Do not reply after completing a task without having done this.**
 
-| 変更の種類 | 対応 |
+| Type of change | Action |
 | --- | --- |
-| 新しい設計上の決定（ライブラリ選定・アルゴリズム・データ構造など） | 新規 ADR を追加 |
-| 既存の決定を覆す変更 | 既存 ADR のステータスを「差し替え済み (by ADR-XXXX)」に更新し、新規 ADR を追加 |
-| 検出ヒューリスティックの変更 | 新規 ADR を追加 |
-| 既存の決定の範囲内での実装変更 | ADR の更新不要。コード・テストのみ変更 |
-| バグ修正 | ADR の更新不要 |
+| New design decision (library selection, algorithm, data structure, etc.) | Add a new ADR |
+| Change that overrides an existing decision | Update the existing ADR status to "Superseded (by ADR-XXXX)" and add a new ADR |
+| Change to detection heuristics | Add a new ADR |
+| Implementation change within scope of an existing decision | No ADR update needed. Change code and tests only |
+| Bug fix | No ADR update needed |
 
-### 新規 ADR の作成手順
+### Creating a New ADR
 
-1. `docs/adr/` の最大番号 + 1 で連番を採番する
-2. ファイル名: `NNNN-kebab-case-title.md`
-3. 以下のテンプレートを使用する
+1. Assign a sequential number: max existing number + 1 in `docs/adr/`
+2. Filename: `NNNN-kebab-case-title.md`
+3. Use the following template:
 
 ```markdown
-# ADR-NNNN: タイトル
+# ADR-NNNN: Title
 
-## ステータス
+## Status
 
-採用済み
+Accepted
 
-## コンテキスト
+## Context
 
-<!-- 決定が必要になった背景・要件・制約 -->
+<!-- Background, requirements, and constraints that led to this decision -->
 
-## 決定
+## Decision
 
-<!-- 何を選択したか。選択肢の比較を含めることを推奨 -->
+<!-- What was chosen. Including a comparison of alternatives is recommended -->
 
-## 結果
+## Consequences
 
-<!-- この決定によって生じるトレードオフ・制約・将来の改善点 -->
+<!-- Trade-offs, constraints, and future improvement points resulting from this decision -->
 ```
 
-4. `docs/adr/README.md` の一覧テーブルに追記する（CLAUDE.md への追記は不要）
+4. Append an entry to the table in `docs/adr/README.md` (no changes to CLAUDE.md needed)
 
-## README 更新ルール
+## README Update Rules
 
-以下のいずれかに該当する変更を行った場合は **README.md を必ず更新**してください。
+Update **README.md** whenever any of the following changes are made:
 
-| 変更の種類 | README で更新する箇所 |
+| Type of change | Section to update in README |
 | --- | --- |
-| 公開 API の追加・変更・削除 | API セクション |
-| オプションの追加・変更・削除 | Options セクション・デフォルト値テーブル |
-| 領域検出アルゴリズムの変更 | Content Detection セクション |
-| テーブル・段落の出力形式変更 | Table Formatting Details / Rich Text セクション |
-| 開発コマンドの追加・変更 | Development セクション |
+| Public API added / changed / removed | API section |
+| Option added / changed / removed | Options section, default values table |
+| Region detection algorithm changed | Content Detection section |
+| Table or paragraph output format changed | Table Formatting Details / Rich Text section |
+| Development command added / changed | Development section |
 
-README の更新はコードと同じコミットに含めてください。
+Include README updates in the same commit as the code changes.
 
-## 開発コマンド
+## Development Commands
 
 ```bash
-npm test            # テスト実行 (vitest)
-npm run build       # TypeScript コンパイル → dist/
-npm run test:watch  # ウォッチモードでテスト
+npm test            # Run tests (vitest)
+npm run build       # Compile TypeScript → dist/
+npm run test:watch  # Run tests in watch mode
 npm run lint        # oxlint
-npm run fmt         # oxfmt（上書き）
-npm run fmt:check   # フォーマット確認（CI 用）
+npm run fmt         # oxfmt (overwrite)
+npm run fmt:check   # Format check (for CI)
 ```
 
-## コード規約
+## Code Conventions
 
-- `src/` 配下のソースを編集し `dist/` は直接編集しない（ビルド成果物）
-- 公開 API の型は `src/types.ts` に集約する
-- テストは `src/__tests__/` に配置し、ファイル名は `*.test.ts`
-- 新機能を追加する際は対応するテストも追加する
-- **markdown 文字列の検証は `toBe` で完全一致**: `convertWorkbook` が返す `markdown` / `sheets[i].markdown` を検証する際は `toContain` ではなく `toBe` を使って出力全体を比較する
+- Edit sources under `src/`; do not edit `dist/` directly (it is build output)
+- Centralize public API types in `src/types.ts`
+- Place tests in `src/__tests__/` with filenames `*.test.ts`
+- Add corresponding tests when adding new features
+- **Validate markdown strings with `toBe` for exact matching**: when asserting on `markdown` / `sheets[i].markdown` returned by `convertWorkbook`, use `toBe` to compare the full output rather than `toContain`
 
-## 現在のアーキテクチャ概要
+## Current Architecture Overview
 
 ```
 src/
-  types.ts              — 全型定義 (ConvertOptions, CellData, Region など)
-  options.ts            — デフォルト値を埋めてオプションを確定
-  cell-formatter.ts     — セル値の抽出・書式変換
-                          rawValue: 生テキスト（HTMLレンダラーが使用）
-                          value:    Markdown書式付き（段落レンダラーが使用）
-  region-detector.ts    — 行→列→再帰スキャンによるテーブル/段落の領域検出（横並び表対応）
-  table-renderer.ts     — HTML テーブル出力 (colspan/rowspan 対応)
-  paragraph-renderer.ts — Markdown 段落出力
-  sheet-converter.ts    — シート全体の変換オーケストレーション
-  index.ts              — 公開 API
+  types.ts              — All type definitions (ConvertOptions, CellData, Region, etc.)
+  options.ts            — Resolve options by filling in default values
+  cell-formatter.ts     — Cell value extraction and format conversion
+                          rawValue: raw text (used by the HTML renderer)
+                          value:    Markdown-formatted text (used by the paragraph renderer)
+  region-detector.ts    — Table/paragraph region detection via row→column→recursive scan (supports side-by-side tables)
+  table-renderer.ts     — HTML table output (colspan/rowspan support)
+  paragraph-renderer.ts — Markdown paragraph output
+  sheet-converter.ts    — Sheet-level conversion orchestration
+  index.ts              — Public API
 ```
 
-### 重要な設計ポイント
+### Key Design Points
 
-- **テーブルは HTML 出力**: `<table>`/`<thead>`/`<tbody>` + colspan/rowspan（詳細: `docs/adr/`）
-- **段落は Markdown 出力**: プレーンテキスト + `**bold**`, `_italic_` 記法
-- **rawValue と value の分離**: `CellData.rawValue` は HTML エスケープ前の生テキスト、`CellData.value` は Markdown 書式適用済みテキスト。テーブルレンダラーは `rawValue` を使い HTML タグを適用する
-- **領域検出**: 行→列→再帰スキャン。空列をギャップとして横並び表を分離する。`minColumns` / `minRows` で閾値を調整できる
+- **Tables output as HTML**: `<table>`/`<thead>`/`<tbody>` + colspan/rowspan (see `docs/adr/`)
+- **Paragraphs output as Markdown**: plain text + `**bold**`, `_italic_` syntax
+- **rawValue vs value separation**: `CellData.rawValue` is the raw text before HTML escaping; `CellData.value` is the Markdown-formatted text. The table renderer uses `rawValue` and applies HTML tags
+- **Region detection**: row→column→recursive scan. Empty columns act as gaps to separate side-by-side tables. Thresholds are adjustable via `minColumns` / `minRows`

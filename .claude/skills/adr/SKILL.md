@@ -2,8 +2,8 @@
 name: adr
 description: >
   Read, create, or supersede Architecture Decision Records (ADRs) in this
-  project. Trigger on any of: "/adr", "ADRを作成", "ADRを追加", "ADRを更新",
-  "ADRを読む", "設計決定を記録", "アーキテクチャ決定".
+  project. Trigger on any of: "/adr", "create ADR", "add ADR", "update ADR",
+  "read ADR", "record design decision", "architecture decision".
 
   IMPORTANT — also trigger AUTOMATICALLY (without waiting for user instruction)
   in these situations:
@@ -19,172 +19,171 @@ description: >
 
 # ADR Skill
 
-ADR ファイルは `docs/adr/` に置かれる。操作前に必ず `docs/adr/README.md` を
-読んで現在の番号・ステータスを確認すること。
+ADR files are stored in `docs/adr/`. Always read `docs/adr/README.md` before
+performing any operation to confirm the current highest number and statuses.
 
-## サブコマンドと引数
+## Subcommands and Arguments
 
-ユーザーの指示から意図を読み取り、以下のいずれかを実行する。
+Infer the user's intent and execute one of the following:
 
-| 呼び出し例 | 実行する操作 |
+| Example invocation | Operation to perform |
 |---|---|
-| `/adr list` | 一覧表示 |
-| `/adr read 0008` | 指定 ADR を表示 |
-| `/adr new "タイトル"` | 新規 ADR を作成 |
-| `/adr supersede 0003 "新タイトル"` | 既存を差し替えて新規作成 |
-| `/adr delete 0003` | 差し替え済み ADR を削除 |
+| `/adr list` | Show list |
+| `/adr read 0008` | Display the specified ADR |
+| `/adr new "Title"` | Create a new ADR |
+| `/adr supersede 0003 "New title"` | Supersede an existing ADR and create a new one |
+| `/adr delete 0003` | Delete a superseded ADR |
 
 ---
 
-## 操作: proactive-check
+## Operation: proactive-check
 
-**コード変更を伴うタスクが完了するたびに必ず実行する。** ユーザーへの最終返答の前に
-このチェックを完了させること。ADR が必要な変更であれば、ユーザーへの返答より先に
-ADR を作成・更新してコミットに含める。
+**Run this after every task that involves code changes**, before sending the final reply to the user.
+Complete this check before responding. If an ADR is required, create or update it and include it in the commit before replying.
 
-### ステップ 1 — 変更内容の分類
+### Step 1 — Classify the change
 
-直前の実装・コミット内容を振り返り、以下の表で ADR 対応が必要かを判断する。
+Review the preceding implementation or commit and use the table below to determine whether an ADR is needed.
 
-| 変更の種類 | 対応 |
+| Type of change | Action |
 |---|---|
-| 新しいライブラリ・依存追加 | 新規 ADR |
-| アルゴリズムの変更 | 新規 ADR（または既存を supersede）|
-| コアインターフェース（型定義）の変更 | 新規 ADR |
-| 公開 API の追加・変更・削除 | 新規 ADR |
-| 出力フォーマットの変更 | 新規 ADR |
-| 検出ヒューリスティックの変更 | 新規 ADR |
-| バグ修正（設計変更なし） | ADR 不要 |
-| テスト・ドキュメントのみの変更 | ADR 不要 |
-| 既存の決定範囲内でのリファクタリング | ADR 不要 |
+| New library / dependency added | New ADR |
+| Algorithm changed | New ADR (or supersede existing) |
+| Core interface (type definition) changed | New ADR |
+| Public API added / changed / removed | New ADR |
+| Output format changed | New ADR |
+| Detection heuristic changed | New ADR |
+| Bug fix (no design change) | No ADR needed |
+| Tests or documentation only | No ADR needed |
+| Refactoring within scope of existing decision | No ADR needed |
 
-### ステップ 2 — 既存 ADR との照合
+### Step 2 — Check against existing ADRs
 
-`docs/adr/README.md` を読み、変更内容をカバーする ADR がすでに存在するか確認する。
-- 存在する → ADR 不要（コメントのみ）
-- 存在しない → ステップ 3 へ
+Read `docs/adr/README.md` and check whether an ADR already covers the change.
+- Exists → No ADR needed (comment only)
+- Does not exist → Proceed to Step 3
 
-### ステップ 3 — ADR の作成または更新
+### Step 3 — Create or update the ADR
 
-- 新しい設計決定 → 「操作: new」を実行する
-- 既存の決定を覆す変更 → 「操作: supersede」を実行する
+- New design decision → Run "Operation: new"
+- Change that overrides an existing decision → Run "Operation: supersede"
 
-> **重要**: ADR の作成・更新はコードと同じコミットに含めること。タスク完了後に
-> 「ADR を更新し忘れた」状態でユーザーに返答しないこと。
-
----
-
-## 操作: list
-
-1. `docs/adr/README.md` を読む
-2. 内容をそのまま表示する
+> **Important**: Include ADR creation/updates in the same commit as the code.
+> Do not reply to the user in a state where you forgot to update the ADR after completing the task.
 
 ---
 
-## 操作: read <番号>
+## Operation: list
 
-1. `docs/adr/` を glob して該当ファイルを特定する（番号が前方一致）
-2. ファイルを読んで内容を表示する
+1. Read `docs/adr/README.md`
+2. Display its contents as-is
 
 ---
 
-## 操作: new <タイトル>
+## Operation: read <number>
 
-### ステップ 1 — 採番
+1. Glob `docs/adr/` to locate the file (prefix match on the number)
+2. Read and display the file contents
 
-`docs/adr/README.md` の一覧から現在の最大番号を読み取り、+1 した4桁ゼロ埋め番号
-`NNNN` を決める。
+---
 
-### ステップ 2 — ファイル作成
+## Operation: new <title>
 
-パス: `docs/adr/NNNN-<タイトルをkebab-case化>.md`
+### Step 1 — Assign a number
 
-テンプレート:
+Read the current highest number from the list in `docs/adr/README.md` and
+determine a zero-padded 4-digit number `NNNN` by adding 1.
+
+### Step 2 — Create the file
+
+Path: `docs/adr/NNNN-<title-in-kebab-case>.md`
+
+Template:
 
 ```markdown
-# ADR-NNNN: タイトル
+# ADR-NNNN: Title
 
-## ステータス
+## Status
 
-採用済み
+Accepted
 
-## コンテキスト
+## Context
 
-<!-- 決定が必要になった背景・要件・制約 -->
+<!-- Background, requirements, and constraints that led to this decision -->
 
-## 決定
+## Decision
 
-<!-- 何を選択したか。選択肢の比較を含めることを推奨 -->
+<!-- What was chosen. Including a comparison of alternatives is recommended -->
 
-## 結果
+## Consequences
 
-<!-- この決定によって生じるトレードオフ・制約・将来の改善点 -->
+<!-- Trade-offs, constraints, and future improvement points resulting from this decision -->
 ```
 
-ユーザーから内容の指示がある場合はセクションを埋める。なければテンプレートのまま
-作成してユーザーに編集を促す。
+If the user provides content, fill in the sections. Otherwise create from the
+template and prompt the user to edit.
 
-### ステップ 3 — インデックス更新
+### Step 3 — Update the index
 
-`docs/adr/README.md` の一覧テーブルに行を追記する:
+Append a row to the table in `docs/adr/README.md`:
 
 ```
-| [NNNN](NNNN-filename.md) | タイトル | 採用済み |
+| [NNNN](NNNN-filename.md) | Title | Accepted |
 ```
 
 ---
 
-## 操作: supersede <旧番号> <新タイトル>
+## Operation: supersede <old-number> <new-title>
 
-### ステップ 1 — 旧 ADR のステータス更新
+### Step 1 — Update the old ADR status
 
-`docs/adr/<旧番号>-*.md` を読み、ステータス行を以下に書き換える:
-
-```
-差し替え済み (by [ADR-NNNN](NNNN-new-filename.md))
-```
-
-`NNNN` は次のステップで決まる新番号を使う。
-
-### ステップ 2 — 新 ADR を作成
-
-「操作: new」と同じ手順で作成する。「コンテキスト」セクションに旧 ADR との関係を
-明記すること:
+Read `docs/adr/<old-number>-*.md` and replace the status line with:
 
 ```
-[ADR-旧番号](旧ファイル名.md) で〇〇を採用したが、△△という理由で変更が必要になった。
+Superseded (by [ADR-NNNN](NNNN-new-filename.md))
 ```
 
-### ステップ 3 — インデックス更新
+`NNNN` is the new number determined in the next step.
 
-`docs/adr/README.md` の旧番号行のステータスを「差し替え済み (by NNNN)」に更新し、
-新番号行を追加する。
+### Step 2 — Create a new ADR
+
+Follow the same procedure as "Operation: new". In the Context section, note
+the relationship to the old ADR:
+
+```
+ADR-<old-number> adopted <something>, but a change became necessary because <reason>.
+```
+
+### Step 3 — Update the index
+
+Update the old number's status to "Superseded (by NNNN)" in `docs/adr/README.md`
+and add the new number's row.
 
 ---
 
-## 操作: delete <番号>
+## Operation: delete <number>
 
-差し替え済みになった ADR ファイルを削除し、インデックスからも除去する。
+Delete a superseded ADR file and remove it from the index.
 
-### ステップ 1 — 前提確認
+### Step 1 — Prerequisite check
 
-対象 ADR のステータスが「差し替え済み」であることを確認する。
-「採用済み」の ADR は削除しない（ユーザーに確認を求める）。
+Confirm that the target ADR's status is "Superseded".
+Do not delete an "Accepted" ADR (ask the user for confirmation).
 
-### ステップ 2 — ファイル削除
+### Step 2 — Delete the file
 
-`docs/adr/<番号>-*.md` を削除する。
+Delete `docs/adr/<number>-*.md`.
 
-### ステップ 3 — インデックス更新
+### Step 3 — Update the index
 
-`docs/adr/README.md` から該当行を削除する。
+Remove the corresponding row from `docs/adr/README.md`.
 
 ---
 
-## 共通ルール
+## Common Rules
 
-- 操作後は必ず変更ファイルを git commit する（メッセージ例: `docs: add ADR-NNNN ...`）
-- コミット後に push するかどうかはユーザーに確認する
-- ADR の一覧・ステータスの正は `docs/adr/README.md` のみ。CLAUDE.md には ADR インデックスを記載しない
-- ADR の内容を勝手に書きすぎない。コンテキストが不明な場合はユーザーに質問する
-- タイトルの kebab-case 変換: 日本語タイトルは英語に意訳してから変換する
+- After any operation, always git commit the changed files (example message: `docs: add ADR-NNNN ...`)
+- After committing, ask the user whether to push
+- The single source of truth for ADR list and statuses is `docs/adr/README.md`. Do not record ADR indexes in CLAUDE.md
+- Do not over-write ADR content. If the context is unclear, ask the user
+- Kebab-case conversion for titles: translate Japanese titles to English before converting to kebab-case

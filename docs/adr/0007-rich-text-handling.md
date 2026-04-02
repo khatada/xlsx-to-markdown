@@ -1,48 +1,48 @@
-# ADR-0007: リッチテキストはセルスタイルから読み取り、XMLパースは行わない
+# ADR-0007: Read rich text from cell styles; do not parse raw XML
 
-## ステータス
+## Status
 
-採用済み
+Accepted
 
-## コンテキスト
+## Context
 
-Excel セルのリッチテキスト（太字・イタリック・ハイパーリンク）を Markdown に変換したい。SheetJS でリッチテキストを取得する方法は主に以下の2つがある：
+We want to convert Excel cell rich text (bold, italic, hyperlinks) to Markdown. There are two main ways to retrieve rich text with SheetJS:
 
-### A. セルスタイル (`cell.s`) から取得
+### A. Retrieve from cell styles (`cell.s`)
 
-`XLSX.read(buf, { cellStyles: true })` を指定すると `cell.s` にフォント情報が格納される。
+Specifying `XLSX.read(buf, { cellStyles: true })` stores font information in `cell.s`.
 
 ```ts
 cell.s.font.bold   // true/false
 cell.s.font.italic // true/false
 ```
 
-- メリット: SheetJS の標準 API で完結。追加パースが不要
-- デメリット: セル全体のスタイルのみ取得できる。セル内の**一部のテキストだけ**太字にしている場合（インラインリッチテキスト）は取得できない
+- Pros: Works entirely with SheetJS's standard API. No additional parsing needed
+- Cons: Only the entire cell's style can be retrieved. If **only part of the text** within a cell is bold (inline rich text), it cannot be retrieved
 
-### B. セルの生 XML (`cell.r`) をパースする
+### B. Parse the raw cell XML (`cell.r`)
 
-SheetJS は `cell.r` に生の XML 文字列（`<r><rPr><b/></rPr><t>text</t></r>` 形式）を格納する場合がある。これをパースすればインラインのスタイルも取得できる。
+SheetJS may store a raw XML string in `cell.r` (in `<r><rPr><b/></rPr><t>text</t></r>` format). Parsing this enables retrieval of inline styles.
 
-- メリット: 部分的な太字・イタリックも再現できる
-- デメリット: XML パースの実装コストが高い。SheetJS のバージョンによって `cell.r` の構造が変わりうる。依存が増える
+- Pros: Can reproduce partial bold/italic
+- Cons: High implementation cost for XML parsing. The structure of `cell.r` may change between SheetJS versions. Increases dependencies
 
-## 決定
+## Decision
 
-**A. セルスタイル (`cell.s`) から取得する**方法を採用する。
+Adopt **A. Retrieve from cell styles (`cell.s`)**.
 
-理由：
+Reasons:
 
-1. **実用上十分**: ビジネス文書で最も多いパターンは「ヘッダー行全体が太字」「特定の列が太字」であり、セル単位のスタイルで大部分のケースをカバーできる
-2. **実装の単純さ**: XML パースを避けることでコードベースをシンプルに保てる
-3. **保守性**: SheetJS の内部フォーマットに依存するリスクを回避できる
+1. **Sufficient for practical use**: The most common pattern in business documents is "entire header row is bold" or "specific column is bold", and cell-level styles cover the majority of cases
+2. **Implementation simplicity**: Avoiding XML parsing keeps the codebase simple
+3. **Maintainability**: Avoids the risk of depending on SheetJS internal format
 
-インラインリッチテキスト（セル内の一部のみ太字）については、SheetJS が `cell.w`（フォーマット済みテキスト）に全体を結合した文字列として返すため、その値をそのまま使いスタイルは適用しない（スタイル適用はセル全体に対して行う）。
+For inline rich text (only part of a cell is bold), SheetJS returns the whole text as a combined string in `cell.w` (formatted text), so that value is used as-is and no style is applied (style application is performed on the entire cell).
 
-ハイパーリンクは `cell.l.Target` プロパティとして SheetJS が取り出すため、セルスタイルとは別に取得し `[text](url)` 形式にマッピングする。
+Hyperlinks are extracted by SheetJS as the `cell.l.Target` property, so they are retrieved separately from cell styles and mapped to `[text](url)` format.
 
-## 結果
+## Consequences
 
-- セル内の部分的な書式（例: 一文字だけ太字）は Markdown に再現されない
-- セル全体が太字 / イタリックの場合は `**text**` / `_text_` として出力される
-- `richText: false` オプションを設定すると書式変換をすべてスキップし、プレーンテキストのみ出力される
+- Partial formatting within a cell (e.g., only one character is bold) is not reproduced in Markdown
+- When an entire cell is bold / italic, it is output as `**text**` / `_text_`
+- Setting the `richText: false` option skips all format conversion and outputs plain text only
