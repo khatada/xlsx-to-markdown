@@ -11,6 +11,8 @@ This file defines guidelines for Claude Code when working in this repository.
 - Skill files (`.claude/skills/`)
 - README.md
 
+**Conversations with the user must be in the user's language.** Respond in whatever language the user writes in.
+
 ## Architecture Decision Records (ADR)
 
 Use the `/adr` skill for all ADR operations. Full rules, templates, and procedures are defined in `.claude/skills/adr/SKILL.md`.
