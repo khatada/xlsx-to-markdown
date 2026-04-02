@@ -341,6 +341,115 @@ describe("detectRegions", () => {
     });
   });
 
+  describe("empty cells with vertical borders are treated as non-empty (useBorders)", () => {
+    const border = { left: { style: "thin" }, right: { style: "thin" } };
+
+    it("empty cells with vertical borders count toward column density", () => {
+      // B2 and B3 are empty but have left/right borders → should be treated as filled
+      const wb = XLSX.utils.book_new();
+      const ws: XLSX.WorkSheet = {
+        "!ref": "A1:B3",
+        A1: { t: "s", v: "Name", s: { border } },
+        B1: { t: "s", v: "Score", s: { border } },
+        A2: { t: "s", v: "Alice", s: { border } },
+        B2: { t: "n", v: 90, s: { border } },
+        A3: { t: "s", v: "Bob", s: { border } },
+        // B3 is intentionally absent (empty cell with border style only)
+        B3: { t: "z", v: undefined, s: { border } },
+      };
+      XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+      const { sheets } = convertWorkbook(wb, { tableDetection: { useBorders: true } });
+      // B3 has a vertical border so it should count as filled → row 2 is dense enough for table
+      expect(sheets[0].regions).toHaveLength(1);
+      expect(sheets[0].regions[0].type).toBe("table");
+    });
+
+    it("a row of only bordered-but-empty cells keeps the band intact (no gap split)", () => {
+      // Row 1 has all empty cells but with vertical borders
+      // Without fix this row would be a gap splitting rows 0 and 2 into separate bands
+      const wb = XLSX.utils.book_new();
+      const ws: XLSX.WorkSheet = {
+        "!ref": "A1:B3",
+        A1: { t: "s", v: "H1", s: { border } },
+        B1: { t: "s", v: "H2", s: { border } },
+        A2: { t: "z", v: undefined, s: { border } }, // empty, bordered
+        B2: { t: "z", v: undefined, s: { border } }, // empty, bordered
+        A3: { t: "s", v: "v1", s: { border } },
+        B3: { t: "s", v: "v2", s: { border } },
+      };
+      XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+      const { sheets } = convertWorkbook(wb, { tableDetection: { useBorders: true } });
+      // All 3 rows belong to a single table (middle row's empty bordered cells are non-empty)
+      expect(sheets[0].regions).toHaveLength(1);
+      expect(sheets[0].regions[0].type).toBe("table");
+      expect(sheets[0].regions[0].startRow).toBe(0);
+      expect(sheets[0].regions[0].endRow).toBe(2);
+    });
+
+    it("empty cells with only one side border do not count toward density", () => {
+      // Cell B3 has only a left border (no right) → requires BOTH left+right → not treated as filled
+      const leftOnlyBorder = { left: { style: "thin" } };
+      const wb = XLSX.utils.book_new();
+      const ws: XLSX.WorkSheet = {
+        "!ref": "A1:B3",
+        A1: { t: "s", v: "H1", s: { border } },
+        B1: { t: "s", v: "H2", s: { border } },
+        A2: { t: "z", v: undefined, s: { border } }, // both borders → filled
+        B2: { t: "z", v: undefined, s: { border: leftOnlyBorder } }, // left only → not filled
+        A3: { t: "s", v: "v1", s: { border } },
+        B3: { t: "s", v: "v2", s: { border } },
+      };
+      XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+      const { sheets } = convertWorkbook(wb, { tableDetection: { useBorders: true } });
+      // Row 1 (A2+B2): A2 has both borders → filledCount=1, B2 has left only → not filled
+      // filledCount=1 < minColumns=2, but hasVerticalBorder=true → still a table candidate
+      expect(sheets[0].regions).toHaveLength(1);
+      expect(sheets[0].regions[0].type).toBe("table");
+    });
+  });
+
+  describe("Excel ListObject autofilter range is treated as non-empty", () => {
+    it("empty cells within !autofilter range count toward column density", () => {
+      // Simulate a ListObject: A1:B3 with autofilter, B3 is empty
+      const wb = XLSX.utils.book_new();
+      const ws: XLSX.WorkSheet = {
+        "!ref": "A1:B3",
+        A1: { t: "s", v: "Name" },
+        B1: { t: "s", v: "Score" },
+        A2: { t: "s", v: "Alice" },
+        B2: { t: "n", v: 90 },
+        A3: { t: "s", v: "Bob" },
+        // B3 is absent (empty) but within the autofilter range
+        "!autofilter": { ref: "A1:B3" },
+      };
+      XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+      const { sheets } = convertWorkbook(wb);
+      expect(sheets[0].regions).toHaveLength(1);
+      expect(sheets[0].regions[0].type).toBe("table");
+    });
+
+    it("a row of only empty cells within !autofilter range keeps the band intact", () => {
+      // Row 1 (A2:B2) has no values but is within the autofilter range
+      const wb = XLSX.utils.book_new();
+      const ws: XLSX.WorkSheet = {
+        "!ref": "A1:B3",
+        A1: { t: "s", v: "H1" },
+        B1: { t: "s", v: "H2" },
+        // A2 and B2 are fully empty but within autofilter range
+        A3: { t: "s", v: "v1" },
+        B3: { t: "s", v: "v2" },
+        "!autofilter": { ref: "A1:B3" },
+      };
+      XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+      const { sheets } = convertWorkbook(wb);
+      // All 3 rows belong to a single table region
+      expect(sheets[0].regions).toHaveLength(1);
+      expect(sheets[0].regions[0].type).toBe("table");
+      expect(sheets[0].regions[0].startRow).toBe(0);
+      expect(sheets[0].regions[0].endRow).toBe(2);
+    });
+  });
+
   describe("issue 6: horizontally merged cells count all spanned columns for density", () => {
     it("a master cell spanning 3 cols satisfies minColumns=2", () => {
       const wb = XLSX.utils.book_new();
