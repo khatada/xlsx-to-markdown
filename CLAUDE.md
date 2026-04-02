@@ -2,6 +2,15 @@
 
 This file defines guidelines for Claude Code when working in this repository.
 
+## Language Rule
+
+**All documentation, comments, ADRs, and CLAUDE.md must be written in English.** This applies to:
+- Source code comments
+- ADR files (`docs/adr/`)
+- This file (CLAUDE.md)
+- Skill files (`.claude/skills/`)
+- README.md
+
 ## Architecture Decision Records (ADR)
 
 ### Reference
