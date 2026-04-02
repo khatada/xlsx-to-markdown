@@ -145,24 +145,16 @@ Output:
 Section 1: Introduction
 
 <table>
-  <thead>
     <tr><th>Name</th><th>Department</th><th style="text-align: right">Salary</th></tr>
-  </thead>
-  <tbody>
     <tr><td>Alice</td><td>Engineering</td><td style="text-align: right">800,000</td></tr>
     <tr><td>Bob</td><td>Marketing</td><td style="text-align: right">650,000</td></tr>
-  </tbody>
 </table>
 
 * Figures are in JPY
 
 <table>
-  <thead>
     <tr><th style="text-align: right">Q1</th><th style="text-align: right">Q2</th></tr>
-  </thead>
-  <tbody>
     <tr><td style="text-align: right">1,200</td><td style="text-align: right">1,450</td></tr>
-  </tbody>
 </table>
 ```
 
@@ -182,7 +174,7 @@ When `richText: true` (default), cell formatting is converted:
 Tables are output as HTML (`<table>`) to support all Excel features:
 
 - **Merged cells** — `colspan` and `rowspan` attributes are set on the master (top-left) cell; child cells are omitted entirely.
-- **Header row** — rendered inside `<thead>` as `<th>` elements when `headerRow: true`.
+- **Header row** — rendered as `<th>` elements when `headerRow: true`.
 - **Column alignment** — columns whose data cells are all numeric are automatically right-aligned (`style="text-align: right"`). Explicit cell alignment takes precedence.
 - **Newlines within cells** — converted to `<br>`.
 - **HTML escaping** — `&`, `<`, `>`, `"` in cell values are escaped to HTML entities.

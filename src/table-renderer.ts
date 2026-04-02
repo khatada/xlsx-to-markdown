@@ -65,9 +65,8 @@ export function renderTable(
 
   const lines: string[] = ["<table>"];
 
-  // --- <thead> ---
+  // --- header row ---
   if (opts.headerRow && !hiddenRows.has(startRow)) {
-    lines.push("  <thead>");
     lines.push(
       renderHtmlRow(
         ws,
@@ -82,11 +81,9 @@ export function renderTable(
         hiddenCols,
       ),
     );
-    lines.push("  </thead>");
   }
 
-  // --- <tbody> ---
-  lines.push("  <tbody>");
+  // --- data rows ---
   const dataStartRow = opts.headerRow ? startRow + 1 : startRow;
   for (let r = dataStartRow; r <= endRow; r++) {
     if (hiddenRows.has(r)) continue;
@@ -105,7 +102,6 @@ export function renderTable(
       ),
     );
   }
-  lines.push("  </tbody>");
   lines.push("</table>");
 
   return lines.join("\n");

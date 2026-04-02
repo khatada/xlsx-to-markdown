@@ -100,14 +100,11 @@ describe("table rendering with CJK content", () => {
     const { markdown } = convertWorkbook(wb);
     expect(markdown).toBe(
       `<table>
-  <thead>
     <tr>
     <th>氏名</th>
     <th style="text-align: right">年齢</th>
     <th>部署</th>
     </tr>
-  </thead>
-  <tbody>
     <tr>
     <td>田中 太郎</td>
     <td style="text-align: right">30</td>
@@ -118,7 +115,6 @@ describe("table rendering with CJK content", () => {
     <td style="text-align: right">25</td>
     <td>開発部</td>
     </tr>
-  </tbody>
 </table>`,
     );
   });
@@ -137,13 +133,10 @@ describe("table rendering with CJK content", () => {
     const { markdown } = convertWorkbook(wb);
     expect(markdown).toBe(
       `<table>
-  <thead>
     <tr>
     <th>商品</th>
     <th>カテゴリ</th>
     </tr>
-  </thead>
-  <tbody>
     <tr>
     <td>りんご</td>
     <td>果物</td>
@@ -152,7 +145,6 @@ describe("table rendering with CJK content", () => {
     <td>にんじん</td>
     <td>野菜</td>
     </tr>
-  </tbody>
 </table>`,
     );
   });
@@ -170,18 +162,14 @@ describe("table rendering with CJK content", () => {
     const { markdown } = convertWorkbook(wb);
     expect(markdown).toBe(
       `<table>
-  <thead>
     <tr>
     <th>説明</th>
     <th>値</th>
     </tr>
-  </thead>
-  <tbody>
     <tr>
     <td>価格 &lt; 100</td>
     <td>A &amp; B</td>
     </tr>
-  </tbody>
 </table>`,
     );
   });
@@ -200,13 +188,10 @@ describe("table rendering with CJK content", () => {
     const { markdown } = convertWorkbook(wb);
     expect(markdown).toBe(
       `<table>
-  <thead>
     <tr>
     <th>이름</th>
     <th style="text-align: right">나이</th>
     </tr>
-  </thead>
-  <tbody>
     <tr>
     <td>김철수</td>
     <td style="text-align: right">28</td>
@@ -215,7 +200,6 @@ describe("table rendering with CJK content", () => {
     <td>이영희</td>
     <td style="text-align: right">32</td>
     </tr>
-  </tbody>
 </table>`,
     );
   });
@@ -234,14 +218,11 @@ describe("table rendering with CJK content", () => {
     const { markdown } = convertWorkbook(wb);
     expect(markdown).toBe(
       `<table>
-  <thead>
     <tr>
     <th>姓名</th>
     <th style="text-align: right">年龄</th>
     <th>城市</th>
     </tr>
-  </thead>
-  <tbody>
     <tr>
     <td>张伟</td>
     <td style="text-align: right">35</td>
@@ -252,7 +233,6 @@ describe("table rendering with CJK content", () => {
     <td style="text-align: right">28</td>
     <td>上海</td>
     </tr>
-  </tbody>
 </table>`,
     );
   });
@@ -270,18 +250,14 @@ describe("table rendering with CJK content", () => {
     const { markdown } = convertWorkbook(wb);
     expect(markdown).toBe(
       `<table>
-  <thead>
     <tr>
     <th>項目</th>
     <th>説明</th>
     </tr>
-  </thead>
-  <tbody>
     <tr>
     <td>商品名</td>
     <td>高品質<br>低価格</td>
     </tr>
-  </tbody>
 </table>`,
     );
   });
@@ -299,18 +275,14 @@ describe("table rendering with CJK content", () => {
     const { markdown } = convertWorkbook(wb, { richText: true });
     expect(markdown).toBe(
       `<table>
-  <thead>
     <tr>
     <th>Name</th>
     <th>Note</th>
     </tr>
-  </thead>
-  <tbody>
     <tr>
     <td>田中</td>
     <td><strong>重要</strong></td>
     </tr>
-  </tbody>
 </table>`,
     );
   });
@@ -329,13 +301,10 @@ describe("table rendering with CJK content", () => {
     const { markdown } = convertWorkbook(wb);
     expect(markdown).toBe(
       `<table>
-  <thead>
     <tr>
     <th>商品</th>
     <th style="text-align: right">価格</th>
     </tr>
-  </thead>
-  <tbody>
     <tr>
     <td>りんご</td>
     <td style="text-align: right">150</td>
@@ -344,7 +313,6 @@ describe("table rendering with CJK content", () => {
     <td>みかん</td>
     <td style="text-align: right">100</td>
     </tr>
-  </tbody>
 </table>`,
     );
   });
@@ -413,32 +381,24 @@ describe("multi-sheet with CJK sheet names", () => {
     ]);
     const { markdown } = convertWorkbook(wb);
     const tableUriage = `<table>
-  <thead>
     <tr>
     <th>月</th>
     <th style="text-align: right">金額</th>
     </tr>
-  </thead>
-  <tbody>
     <tr>
     <td>1月</td>
     <td style="text-align: right">100000</td>
     </tr>
-  </tbody>
 </table>`;
     const tableShiire = `<table>
-  <thead>
     <tr>
     <th>月</th>
     <th style="text-align: right">金額</th>
     </tr>
-  </thead>
-  <tbody>
     <tr>
     <td>1月</td>
     <td style="text-align: right">80000</td>
     </tr>
-  </tbody>
 </table>`;
     expect(markdown).toBe(`## 売上データ\n\n${tableUriage}\n\n\n## 仕入データ\n\n${tableShiire}`);
   });
@@ -462,32 +422,24 @@ describe("multi-sheet with CJK sheet names", () => {
     ]);
     const { markdown } = convertWorkbook(wb);
     const tableSummary = `<table>
-  <thead>
     <tr>
     <th style="text-align: right">a</th>
     <th style="text-align: right">b</th>
     </tr>
-  </thead>
-  <tbody>
     <tr>
     <td style="text-align: right">1</td>
     <td style="text-align: right">2</td>
     </tr>
-  </tbody>
 </table>`;
     const tableShosai = `<table>
-  <thead>
     <tr>
     <th style="text-align: right">x</th>
     <th style="text-align: right">y</th>
     </tr>
-  </thead>
-  <tbody>
     <tr>
     <td style="text-align: right">3</td>
     <td style="text-align: right">4</td>
     </tr>
-  </tbody>
 </table>`;
     expect(markdown).toBe(`## Summary\n\n${tableSummary}\n\n\n## 詳細\n\n${tableShosai}`);
   });
