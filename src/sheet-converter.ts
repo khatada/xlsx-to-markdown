@@ -77,6 +77,30 @@ export function convertSheet(
             }
           }
         }
+
+        // Vertical rowspan: the master cell is in a previous row and spans into
+        // this row. Count this column as filled so that rows under a rowspan are
+        // not penalised in the density check (which would cause the band to be
+        // classified as a paragraph instead of a table).
+        if (!filledCols.has(c)) {
+          const masterAddr = mergedCellInfo.childToMaster.get(addr);
+          if (masterAddr) {
+            const masterPos = XLSX.utils.decode_cell(masterAddr);
+            if (masterPos.r < r) {
+              const masterCell: XLSX.CellObject | undefined = ws[masterAddr];
+              const masterHasValue =
+                masterCell !== undefined &&
+                masterCell.v !== undefined &&
+                masterCell.v !== null &&
+                masterCell.v !== "";
+              if (masterHasValue) {
+                filledCols.add(c);
+                filledCount++;
+              }
+            }
+          }
+        }
+
         continue;
       }
 

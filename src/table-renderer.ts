@@ -78,8 +78,8 @@ export function renderTable(
     if (m.s.r < startRow || m.s.r > endRow || m.s.c < startCol || m.s.c > endCol) continue;
 
     const masterAddr = XLSX.utils.encode_cell({ r: m.s.r, c: m.s.c });
-    const colspan = m.e.c - m.s.c + 1;
-    const rowspan = m.e.r - m.s.r + 1;
+    const colspan = Math.min(m.e.c, endCol) - m.s.c + 1;
+    const rowspan = Math.min(m.e.r, endRow) - m.s.r + 1;
     mergeSpanMap.set(masterAddr, { colspan, rowspan });
 
     for (let r = m.s.r; r <= m.e.r; r++) {
@@ -264,7 +264,10 @@ function inferColumnAlignments(
       const v = data.rawValue.trim();
       if (v) {
         hasValue = true;
-        if (!/^-?[\d,]+(\.\d+)?%?$/.test(v)) allNumeric = false;
+        // Use SheetJS cell type as the primary numeric signal so that values
+        // displayed with currency symbols (¥1,000, $100) are still right-aligned.
+        const numericByType = cell?.t === "n";
+        if (!numericByType && !/^-?[\d,]+(\.\d+)?%?$/.test(v)) allNumeric = false;
       }
     }
 

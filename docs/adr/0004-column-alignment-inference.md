@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Superseded (by [ADR-0018](0018-right-align-numeric-cells-by-cell-type.md))
 
 ## Context
 

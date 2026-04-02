@@ -475,4 +475,53 @@ describe("detectRegions", () => {
       );
     });
   });
+
+  describe("issue: rows under a vertical rowspan have correct density", () => {
+    it("detects table when column A is a vertical rowspan and column B has data per row", () => {
+      const wb = XLSX.utils.book_new();
+      const ws: XLSX.WorkSheet = {
+        "!ref": "A1:B3",
+        A1: { t: "s", v: "Name" }, // master, rowspan=3
+        B1: { t: "s", v: "Q1" },
+        // A2, A3 are merge children
+        B2: { t: "s", v: "Q2" },
+        B3: { t: "s", v: "Q3" },
+        "!merges": [{ s: { r: 0, c: 0 }, e: { r: 2, c: 0 } }],
+      };
+      XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+      const { sheets } = convertWorkbook(wb);
+      expect(sheets[0].regions).toHaveLength(1);
+      expect(sheets[0].regions[0].type).toBe("table");
+      expect(sheets[0].markdown).toBe(
+        `<table>
+    <tr>
+    <th rowspan="3">Name</th>
+    <th>Q1</th>
+    </tr>
+    <tr>
+    <td>Q2</td>
+    </tr>
+    <tr>
+    <td>Q3</td>
+    </tr>
+</table>`,
+      );
+    });
+
+    it("does not count rowspan coverage when master cell is empty", () => {
+      const wb = XLSX.utils.book_new();
+      const ws: XLSX.WorkSheet = {
+        "!ref": "A1:B3",
+        // A1 is master but has no value
+        B1: { t: "s", v: "Q1" },
+        B2: { t: "s", v: "Q2" },
+        B3: { t: "s", v: "Q3" },
+        "!merges": [{ s: { r: 0, c: 0 }, e: { r: 2, c: 0 } }],
+      };
+      XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+      const { sheets } = convertWorkbook(wb);
+      // A1 has no value → rowspan coverage not counted → rows 1-2 have filledCount=1 → paragraph
+      expect(sheets[0].regions[0].type).toBe("paragraph");
+    });
+  });
 });
