@@ -302,6 +302,68 @@ describe("table rendering (HTML)", () => {
     );
   });
 
+  it("clamps colspan when the merge extends into a hidden column", () => {
+    // Merge A1:D1, but column D is hidden.
+    // The region is detected as A1:C2 (D excluded because it is hidden).
+    // Without clamping, colspan would be 4; with clamping it should be 3.
+    const wb = XLSX.utils.book_new();
+    const ws: XLSX.WorkSheet = {
+      "!ref": "A1:D2",
+      A1: { t: "s", v: "Wide Header" },
+      A2: { t: "s", v: "a" },
+      B2: { t: "s", v: "b" },
+      C2: { t: "s", v: "c" },
+      D2: { t: "s", v: "hidden" },
+      "!merges": [{ s: { r: 0, c: 0 }, e: { r: 0, c: 3 } }], // A1:D1
+      "!cols": [undefined, undefined, undefined, { hidden: true }] as XLSX.ColInfo[], // D hidden
+    };
+    XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+    const { markdown } = convertWorkbook(wb);
+    expect(markdown).toBe(
+      `<table>
+    <tr>
+    <th colspan="3">Wide Header</th>
+    </tr>
+    <tr>
+    <td>a</td>
+    <td>b</td>
+    <td>c</td>
+    </tr>
+</table>`,
+    );
+  });
+
+  it("right-aligns columns with currency-formatted numeric cells", () => {
+    const wb = XLSX.utils.book_new();
+    const ws: XLSX.WorkSheet = {
+      "!ref": "A1:B3",
+      A1: { t: "s", v: "Item" },
+      B1: { t: "s", v: "Price" },
+      A2: { t: "s", v: "Apple" },
+      B2: { t: "n", v: 100, w: "¥100" },
+      A3: { t: "s", v: "Banana" },
+      B3: { t: "n", v: 200, w: "$200" },
+    };
+    XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+    const { markdown } = convertWorkbook(wb);
+    expect(markdown).toBe(
+      `<table>
+    <tr>
+    <th>Item</th>
+    <th style="text-align: right">Price</th>
+    </tr>
+    <tr>
+    <td>Apple</td>
+    <td style="text-align: right">¥100</td>
+    </tr>
+    <tr>
+    <td>Banana</td>
+    <td style="text-align: right">$200</td>
+    </tr>
+</table>`,
+    );
+  });
+
   it("renders all rows as td when headerRow is false", () => {
     const wb = buildWorkbook([
       {

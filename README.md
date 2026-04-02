@@ -270,7 +270,7 @@ Tables are output as HTML (`<table>`) to support all Excel features:
 
 - **Merged cells** — `colspan` and `rowspan` attributes are set on the master (top-left) cell; child cells are omitted entirely.
 - **Header row** — rendered as `<th>` elements when `headerRow: true`.
-- **Column alignment** — columns whose data cells are all numeric are automatically right-aligned (`style="text-align: right"`). Explicit cell alignment takes precedence.
+- **Column alignment** — columns whose data cells are all numeric (`cell.t === "n"`) are automatically right-aligned (`style="text-align: right"`), including currency-formatted values such as `¥1,000` or `$100`. Explicit cell alignment takes precedence.
 - **Newlines within cells** — converted to `<br>`.
 - **HTML escaping** — `&`, `<`, `>`, `"` in cell values are escaped to HTML entities.
 - **Formula cells** — the computed value is used; the formula string is never output.
