@@ -28,6 +28,9 @@ jobs:
       - name: Format check
         run: npm run fmt:check
 
+      - name: Secret scan
+        run: npm run secretlint
+
   test:
     name: Test
     runs-on: ubuntu-latest

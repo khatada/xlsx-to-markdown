@@ -201,6 +201,7 @@ npm run build       # compile TypeScript → dist/
 npm run lint        # oxlint
 npm run fmt         # oxfmt
 npm run fmt:check   # check formatting (CI)
+npm run secretlint  # scan for secrets
 ```
 
 ## License
