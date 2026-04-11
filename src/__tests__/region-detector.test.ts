@@ -404,6 +404,126 @@ describe("detectRegions", () => {
       expect(sheets[0].regions).toHaveLength(1);
       expect(sheets[0].regions[0].type).toBe("table");
     });
+
+    it("blank separator column with only left/right borders splits side-by-side tables", () => {
+      // Table A: cols A-B, separator: col C (empty, left+right border only, no top/bottom),
+      // Table B: cols D-E.
+      // The separator column must be treated as blank so the two tables are detected separately.
+      const borderLR = { left: { style: "thin" }, right: { style: "thin" } };
+      const borderAll = {
+        left: { style: "thin" },
+        right: { style: "thin" },
+        top: { style: "thin" },
+        bottom: { style: "thin" },
+      };
+      const wb = XLSX.utils.book_new();
+      const ws: XLSX.WorkSheet = {
+        "!ref": "A1:E3",
+        // Table A (cols 0-1)
+        A1: { t: "s", v: "H1", s: { border: borderAll } },
+        B1: { t: "s", v: "H2", s: { border: borderAll } },
+        A2: { t: "s", v: "v1", s: { border: borderAll } },
+        B2: { t: "s", v: "v2", s: { border: borderAll } },
+        A3: { t: "s", v: "v3", s: { border: borderAll } },
+        B3: { t: "s", v: "v4", s: { border: borderAll } },
+        // Separator (col 2): empty, left+right borders only (no top/bottom)
+        C1: { t: "z", v: undefined, s: { border: borderLR } },
+        C2: { t: "z", v: undefined, s: { border: borderLR } },
+        C3: { t: "z", v: undefined, s: { border: borderLR } },
+        // Table B (cols 3-4)
+        D1: { t: "s", v: "X1", s: { border: borderAll } },
+        E1: { t: "s", v: "X2", s: { border: borderAll } },
+        D2: { t: "s", v: "y1", s: { border: borderAll } },
+        E2: { t: "s", v: "y2", s: { border: borderAll } },
+        D3: { t: "s", v: "y3", s: { border: borderAll } },
+        E3: { t: "s", v: "y4", s: { border: borderAll } },
+      };
+      XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+      const { sheets } = convertWorkbook(wb, { tableDetection: { useBorders: true } });
+      expect(sheets[0].regions).toHaveLength(2);
+      expect(sheets[0].regions.every((r) => r.type === "table")).toBe(true);
+      expect(sheets[0].regions[0].startCol).toBe(0);
+      expect(sheets[0].regions[0].endCol).toBe(1);
+      expect(sheets[0].regions[1].startCol).toBe(3);
+      expect(sheets[0].regions[1].endCol).toBe(4);
+    });
+
+    it("separator column with a top/bottom border is still treated as filled", () => {
+      // Same layout but col C has a top border → not a blank separator → tables merge into one band
+      const borderLR = { left: { style: "thin" }, right: { style: "thin" } };
+      const borderLRTop = {
+        left: { style: "thin" },
+        right: { style: "thin" },
+        top: { style: "thin" },
+      };
+      const borderAll = {
+        left: { style: "thin" },
+        right: { style: "thin" },
+        top: { style: "thin" },
+        bottom: { style: "thin" },
+      };
+      const wb = XLSX.utils.book_new();
+      const ws: XLSX.WorkSheet = {
+        "!ref": "A1:E3",
+        A1: { t: "s", v: "H1", s: { border: borderAll } },
+        B1: { t: "s", v: "H2", s: { border: borderAll } },
+        A2: { t: "s", v: "v1", s: { border: borderAll } },
+        B2: { t: "s", v: "v2", s: { border: borderAll } },
+        A3: { t: "s", v: "v3", s: { border: borderAll } },
+        B3: { t: "s", v: "v4", s: { border: borderAll } },
+        // Separator col C: row 0 has a top border → not a blank separator
+        C1: { t: "z", v: undefined, s: { border: borderLRTop } },
+        C2: { t: "z", v: undefined, s: { border: borderLR } },
+        C3: { t: "z", v: undefined, s: { border: borderLR } },
+        D1: { t: "s", v: "X1", s: { border: borderAll } },
+        E1: { t: "s", v: "X2", s: { border: borderAll } },
+        D2: { t: "s", v: "y1", s: { border: borderAll } },
+        E2: { t: "s", v: "y2", s: { border: borderAll } },
+        D3: { t: "s", v: "y3", s: { border: borderAll } },
+        E3: { t: "s", v: "y4", s: { border: borderAll } },
+      };
+      XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+      const { sheets } = convertWorkbook(wb, { tableDetection: { useBorders: true } });
+      // Col C has a top border → treated as filled → single band → one table region
+      expect(sheets[0].regions).toHaveLength(1);
+      expect(sheets[0].regions[0].type).toBe("table");
+    });
+
+    it("separator column with a value is still treated as filled", () => {
+      // Col C has a value in row 1 → colHasActualFill → not a blank separator
+      const borderLR = { left: { style: "thin" }, right: { style: "thin" } };
+      const borderAll = {
+        left: { style: "thin" },
+        right: { style: "thin" },
+        top: { style: "thin" },
+        bottom: { style: "thin" },
+      };
+      const wb = XLSX.utils.book_new();
+      const ws: XLSX.WorkSheet = {
+        "!ref": "A1:E3",
+        A1: { t: "s", v: "H1", s: { border: borderAll } },
+        B1: { t: "s", v: "H2", s: { border: borderAll } },
+        A2: { t: "s", v: "v1", s: { border: borderAll } },
+        B2: { t: "s", v: "v2", s: { border: borderAll } },
+        A3: { t: "s", v: "v3", s: { border: borderAll } },
+        B3: { t: "s", v: "v4", s: { border: borderAll } },
+        // Separator col C: has a real value in row 0 → not blank → treated as filled
+        C1: { t: "s", v: "sep", s: { border: borderLR } },
+        C2: { t: "z", v: undefined, s: { border: borderLR } },
+        C3: { t: "z", v: undefined, s: { border: borderLR } },
+        D1: { t: "s", v: "X1", s: { border: borderAll } },
+        E1: { t: "s", v: "X2", s: { border: borderAll } },
+        D2: { t: "s", v: "y1", s: { border: borderAll } },
+        E2: { t: "s", v: "y2", s: { border: borderAll } },
+        D3: { t: "s", v: "y3", s: { border: borderAll } },
+        E3: { t: "s", v: "y4", s: { border: borderAll } },
+      };
+      XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+      const { sheets } = convertWorkbook(wb, { tableDetection: { useBorders: true } });
+      // Col C has a value → treated as filled → one table region covering all 5 cols
+      expect(sheets[0].regions).toHaveLength(1);
+      expect(sheets[0].regions[0].type).toBe("table");
+    });
   });
 
   describe("Excel ListObject autofilter range is treated as non-empty", () => {
