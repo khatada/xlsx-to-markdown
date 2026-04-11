@@ -10,8 +10,8 @@ This directory records design decisions for the xlsx-to-md library in ADR (Archi
 | [0002](0002-region-detection-algorithm.md) | Adopt "row density scan" for region detection algorithm | Superseded (by 0010) |
 | [0010](0010-recursive-region-detection.md) | Change region detection to "row→column→recursive scan" to separate side-by-side tables | Accepted |
 | [0004](0004-column-alignment-inference.md) | Automatically infer right-alignment for numeric columns | Superseded (by 0018) |
-| [0006](0006-multi-sheet-headings.md) | Auto-insert "## Sheet Name" headings when multiple sheets are present | Accepted |
-| [0007](0007-rich-text-handling.md) | Read rich text from cell styles; do not parse raw XML | Accepted |
+| [0006](0006-multi-sheet-headings.md) | Auto-insert "## Sheet Name" headings when multiple sheets are present | Superseded (by 0020) |
+| [0007](0007-rich-text-handling.md) | Read rich text from cell styles; do not parse raw XML | Superseded (by 0019) |
 | [0008](0008-html-table-format.md) | Change table output format to HTML with full colspan/rowspan support | Accepted |
 | [0009](0009-linter-and-formatter.md) | Adopt oxlint as linter and oxfmt as formatter | Accepted |
 | [0011](0011-border-based-table-boundary-detection.md) | Use vertical borders (left/right) as the primary signal for table boundary detection | Accepted |
@@ -22,6 +22,9 @@ This directory records design decisions for the xlsx-to-md library in ADR (Archi
 | [0016](0016-single-cell-per-row-renders-as-paragraph.md) | Render single-visible-cell-per-row table regions as paragraphs | Accepted |
 | [0017](0017-count-vertically-spanned-columns-for-density.md) | Count vertically-spanned columns in child rows for density | Accepted |
 | [0018](0018-right-align-numeric-cells-by-cell-type.md) | Right-align numeric columns by cell type, not only formatted string | Accepted |
+| [0019](0019-inline-rich-text-via-cell-r-xml.md) | Parse cell.r XML to reproduce per-run inline rich text | Accepted |
+| [0020](0020-escape-markdown-in-sheet-name-headings.md) | Escape Markdown special characters in sheet name headings | Accepted |
+| [0021](0021-auto-exclude-hidden-sheets.md) | Auto-exclude hidden sheets from conversion output | Accepted |
 
 ## ADR Format
 

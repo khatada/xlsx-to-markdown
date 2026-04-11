@@ -167,7 +167,111 @@ describe("extractCellData", () => {
     });
   });
 
+  describe("inline rich text (cell.r XML parsing)", () => {
+    const richOpts = resolveOptions({ richText: true });
+
+    it("parses bold run from cell.r XML", () => {
+      const cell = makeCell({
+        t: "s",
+        v: "bold text",
+        r: "<r><rPr><b/></rPr><t>bold text</t></r>",
+      } as Partial<XLSX.CellObject>);
+      const data = extractCellData(cell, noMerges, "A1", richOpts);
+      expect(data.value).toBe("**bold text**");
+      expect(data.richTextHtml).toBe("<strong>bold text</strong>");
+    });
+
+    it("parses mixed bold and plain runs", () => {
+      // Space is in the plain run so the Markdown bold marker has no trailing whitespace
+      const cell = makeCell({
+        t: "s",
+        v: "bold normal",
+        r: '<r><rPr><b/></rPr><t>bold</t></r><r><t xml:space="preserve"> normal</t></r>',
+      } as Partial<XLSX.CellObject>);
+      const data = extractCellData(cell, noMerges, "A1", richOpts);
+      expect(data.value).toBe("**bold** normal");
+      expect(data.richTextHtml).toBe("<strong>bold</strong> normal");
+    });
+
+    it("parses italic run from cell.r XML", () => {
+      const cell = makeCell({
+        t: "s",
+        v: "italic text",
+        r: "<r><rPr><i/></rPr><t>italic text</t></r>",
+      } as Partial<XLSX.CellObject>);
+      const data = extractCellData(cell, noMerges, "A1", richOpts);
+      expect(data.value).toBe("_italic text_");
+      expect(data.richTextHtml).toBe("<em>italic text</em>");
+    });
+
+    it("parses bold+italic run from cell.r XML", () => {
+      const cell = makeCell({
+        t: "s",
+        v: "bold italic",
+        r: "<r><rPr><b/><i/></rPr><t>bold italic</t></r>",
+      } as Partial<XLSX.CellObject>);
+      const data = extractCellData(cell, noMerges, "A1", richOpts);
+      expect(data.value).toBe("***bold italic***");
+      expect(data.richTextHtml).toBe("<strong><em>bold italic</em></strong>");
+    });
+
+    it("rawValue is the plain text concatenation of all runs", () => {
+      const cell = makeCell({
+        t: "s",
+        v: "bold plain",
+        r: '<r><rPr><b/></rPr><t>bold</t></r><r><t xml:space="preserve"> plain</t></r>',
+      } as Partial<XLSX.CellObject>);
+      const data = extractCellData(cell, noMerges, "A1", richOpts);
+      expect(data.rawValue).toBe("bold plain");
+    });
+
+    it("wraps inline rich text in hyperlink markdown when cell.l is set", () => {
+      const cell = makeCell({
+        t: "s",
+        v: "click here",
+        r: "<r><rPr><b/></rPr><t>click here</t></r>",
+        l: { Target: "https://example.com" },
+      } as Partial<XLSX.CellObject>);
+      const data = extractCellData(cell, noMerges, "A1", richOpts);
+      expect(data.value).toBe("[**click here**](https://example.com)");
+    });
+
+    it("falls back to plain value when cell.r contains no <r> elements", () => {
+      const cell = makeCell({
+        t: "s",
+        v: "plain",
+        r: "plain",
+      } as Partial<XLSX.CellObject>);
+      const data = extractCellData(cell, noMerges, "A1", richOpts);
+      expect(data.richTextHtml).toBeUndefined();
+      expect(data.value).toBe("plain");
+    });
+
+    it("unescapes XML entities in run text", () => {
+      const cell = makeCell({
+        t: "s",
+        v: "a & b",
+        r: "<r><t>a &amp; b</t></r>",
+      } as Partial<XLSX.CellObject>);
+      const data = extractCellData(cell, noMerges, "A1", richOpts);
+      expect(data.rawValue).toBe("a & b");
+    });
+  });
+
   describe("hyperlink edge cases", () => {
+    it("outputs plain text when HYPERLINK formula uses a cell reference as URL", () => {
+      const cell = makeCell({
+        t: "s",
+        v: "Visit site",
+        f: 'HYPERLINK(A1,"Visit site")',
+        w: "Visit site",
+      });
+      const data = extractCellData(cell, noMerges, "B1", opts);
+      // Cell reference URL cannot be resolved → graceful fallback to plain text
+      expect(data.value).toBe("Visit site");
+      expect(data.hyperlink).toBeUndefined();
+    });
+
     it("extracts mailto: URL from HYPERLINK formula", () => {
       const cell = makeCell({
         t: "s",

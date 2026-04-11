@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import * as XLSX from "xlsx";
 import { convertWorkbook } from "../index.js";
 import { buildWorkbook } from "./helpers.js";
 
@@ -122,6 +123,71 @@ describe("multi-sheet handling", () => {
     expect(() => convertWorkbook(wb, { sheets: ["NonExistent"] })).toThrow(
       'Sheet "NonExistent" not found',
     );
+  });
+
+  it("escapes Markdown special characters in sheet name headings", () => {
+    // Excel forbids * [ ] \ / ? : in sheet names, but _ ` < > ! are allowed.
+    // We test with _ and ` which are Markdown inline formatting characters.
+    const wb = XLSX.utils.book_new();
+    const ws1 = XLSX.utils.aoa_to_sheet([
+      ["a", "b"],
+      [1, 2],
+    ]);
+    const ws2 = XLSX.utils.aoa_to_sheet([
+      ["x", "y"],
+      [3, 4],
+    ]);
+    XLSX.utils.book_append_sheet(wb, ws1, "_italic_"); // underscores → italic in Markdown
+    XLSX.utils.book_append_sheet(wb, ws2, "code`snippet"); // backtick → code in Markdown
+    const { markdown } = convertWorkbook(wb);
+    expect(markdown).toContain("## \\_italic\\_");
+    expect(markdown).toContain("## code\\`snippet");
+  });
+
+  it("skips hidden sheets by default", () => {
+    const wb = buildWorkbook([
+      {
+        name: "Visible",
+        data: [
+          ["a", "b"],
+          [1, 2],
+        ],
+      },
+      {
+        name: "Hidden",
+        data: [
+          ["x", "y"],
+          [3, 4],
+        ],
+      },
+    ]);
+    // Mark second sheet as hidden via workbook metadata
+    wb.Workbook = { Sheets: [{ Hidden: 0 }, { Hidden: 1 }] };
+    const { sheets } = convertWorkbook(wb);
+    expect(sheets.map((s) => s.name)).toEqual(["Visible"]);
+  });
+
+  it("includes hidden sheets when explicitly requested via sheets option", () => {
+    const wb = buildWorkbook([
+      {
+        name: "Visible",
+        data: [
+          ["a", "b"],
+          [1, 2],
+        ],
+      },
+      {
+        name: "Hidden",
+        data: [
+          ["x", "y"],
+          [3, 4],
+        ],
+      },
+    ]);
+    wb.Workbook = { Sheets: [{ Hidden: 0 }, { Hidden: 1 }] };
+    // Explicit filter bypasses visibility check
+    const { sheets } = convertWorkbook(wb, { sheets: ["Hidden"] });
+    expect(sheets.map((s) => s.name)).toEqual(["Hidden"]);
   });
 
   it("filters sheets by index", () => {

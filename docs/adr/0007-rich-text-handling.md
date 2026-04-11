@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Superseded (by [ADR-0019](0019-inline-rich-text-via-cell-r-xml.md))
 
 ## Context
 
