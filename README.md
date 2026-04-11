@@ -111,6 +111,8 @@ The library uses a recursive row→column→row scan to classify each block of c
    - **Table** — every row has `≥ minColumns` filled cells, and the band spans `≥ minRows` rows
    - **Paragraph** — everything else
 
+When `useBorders: true` (default), an empty cell that has both a left and a right border is counted as "filled" — this keeps bordered-but-valueless table cells from breaking table detection. **Exception**: if every cell in a column within a band is blank *and* has no top or bottom border, the column is treated as empty regardless of left/right borders. This ensures that a separator column between two side-by-side tables is still recognised as a gap even when it carries border styles from the adjacent tables.
+
 ### Side-by-side tables
 
 Tables placed horizontally on the same rows (separated by at least one empty column) are detected as independent regions:
@@ -123,6 +125,8 @@ Tables placed horizontally on the same rows (separated by at least one empty col
 ```
 
 Column D is empty → detected as two tables (A–C and E–G), each rendered as its own `<table>`.
+
+The separator column may carry left/right border styles from the adjacent table formatting. As long as it has no top or bottom border and no values anywhere within the row-band, it is still treated as an empty gap.
 
 ### Mixed content example
 
