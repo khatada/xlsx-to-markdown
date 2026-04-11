@@ -17,7 +17,7 @@ This directory records design decisions for the xlsx-to-md library in ADR (Archi
 | [0011](0011-border-based-table-boundary-detection.md) | Use vertical borders (left/right) as the primary signal for table boundary detection | Accepted |
 | [0012](0012-exclude-hidden-rows-and-columns.md) | Exclude hidden rows and columns from conversion output | Accepted |
 | [0013](0013-hyperlink-formula-extraction.md) | Extract destination URL from =HYPERLINK() formula | Accepted |
-| [0014](0014-treat-bordered-and-autofiltered-empty-cells-as-non-empty.md) | Treat empty cells meeting border/autofilter conditions as non-empty | Accepted |
+| [0014](0014-treat-bordered-and-autofiltered-empty-cells-as-non-empty.md) | Treat empty cells meeting border/autofilter conditions as non-empty | Superseded (by 0022) |
 | [0015](0015-secretlint-pre-commit.md) | Run secretlint as a pre-commit hook and in CI to prevent secret leaks | Accepted |
 | [0016](0016-single-cell-per-row-renders-as-paragraph.md) | Render single-visible-cell-per-row table regions as paragraphs | Accepted |
 | [0017](0017-count-vertically-spanned-columns-for-density.md) | Count vertically-spanned columns in child rows for density | Accepted |
@@ -25,6 +25,7 @@ This directory records design decisions for the xlsx-to-md library in ADR (Archi
 | [0019](0019-inline-rich-text-via-cell-r-xml.md) | Parse cell.r XML to reproduce per-run inline rich text | Accepted |
 | [0020](0020-escape-markdown-in-sheet-name-headings.md) | Escape Markdown special characters in sheet name headings | Accepted |
 | [0021](0021-auto-exclude-hidden-sheets.md) | Auto-exclude hidden sheets from conversion output | Accepted |
+| [0022](0022-blank-separator-column-exception-for-border-promotion.md) | Add blank-separator-column exception to the LR-border fill promotion | Accepted |
 
 ## ADR Format
 

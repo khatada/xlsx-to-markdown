@@ -43,8 +43,14 @@ export function convertSheet(
     if (colsConfig[c]?.hidden) hiddenCols.add(c);
   }
 
-  // Collect RowInfo for each row in the sheet
+  // Collect RowInfo for each row in the sheet.
+  // For the blank-separator-column detection (below), we also track two extra
+  // per-row sets that are NOT part of the public RowInfo type:
+  //   borderPromotedCols — columns added to filledCols solely by the LR-border rule
+  //   borderTopBottomCols — columns that have a top or bottom border in this row
   const rowInfos: RowInfo[] = [];
+  const rowBorderPromotedCols: Set<number>[] = []; // parallel to rowInfos
+  const rowBorderTopBottomCols: Set<number>[] = []; // parallel to rowInfos
   for (let r = range.s.r; r <= range.e.r; r++) {
     if (hiddenRows.has(r)) continue; // Issue 1: skip hidden rows
 
@@ -52,6 +58,8 @@ export function convertSheet(
     let hasBorder = false;
     let hasVerticalBorder = false;
     const filledCols = new Set<number>();
+    const borderPromotedCols = new Set<number>();
+    const borderTopBottomCols = new Set<number>();
 
     for (let c = range.s.c; c <= range.e.c; c++) {
       if (hiddenCols.has(c)) continue; // Issue 1: skip hidden columns
@@ -60,20 +68,21 @@ export function convertSheet(
 
       if (mergedCellInfo.childCells.has(addr)) {
         // Issue 2: check master cell's borders for this merged child
-        if (!hasBorder || !hasVerticalBorder) {
-          const masterAddr = mergedCellInfo.childToMaster.get(addr);
-          if (masterAddr) {
-            const masterCell: XLSX.CellObject | undefined = ws[masterAddr];
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const style: any = (masterCell as any)?.s;
-            if (style?.border) {
-              const b = style.border;
-              if (b.top?.style || b.bottom?.style || b.left?.style || b.right?.style) {
-                hasBorder = true;
-              }
-              if (b.left?.style || b.right?.style) {
-                hasVerticalBorder = true;
-              }
+        const masterAddr = mergedCellInfo.childToMaster.get(addr);
+        if (masterAddr) {
+          const masterCell: XLSX.CellObject | undefined = ws[masterAddr];
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const style: any = (masterCell as any)?.s;
+          if (style?.border) {
+            const b = style.border;
+            if (b.top?.style || b.bottom?.style || b.left?.style || b.right?.style) {
+              hasBorder = true;
+            }
+            if (b.top?.style || b.bottom?.style) {
+              borderTopBottomCols.add(c);
+            }
+            if (b.left?.style || b.right?.style) {
+              hasVerticalBorder = true;
             }
           }
         }
@@ -144,11 +153,16 @@ export function convertSheet(
           if (b.top?.style || b.bottom?.style || b.left?.style || b.right?.style) {
             hasBorder = true;
           }
+          if (b.top?.style || b.bottom?.style) {
+            borderTopBottomCols.add(c);
+          }
           if (b.left?.style || b.right?.style) {
             hasVerticalBorder = true;
             // When useBorders is enabled, treat cells with BOTH left and right
             // vertical borders as non-empty so that bordered-but-valueless cells
             // (common in Excel table formatting) contribute to column density.
+            // Whether this promotion should be rolled back for blank separator
+            // columns is decided after band identification (see below).
             if (
               opts.tableDetection.useBorders &&
               b.left?.style &&
@@ -157,6 +171,7 @@ export function convertSheet(
             ) {
               filledCols.add(c);
               filledCount++;
+              borderPromotedCols.add(c);
             }
           }
         }
@@ -172,6 +187,61 @@ export function convertSheet(
       hasBorder,
       hasVerticalBorder,
     });
+    rowBorderPromotedCols.push(borderPromotedCols);
+    rowBorderTopBottomCols.push(borderTopBottomCols);
+  }
+
+  // --- Blank-separator-column rollback (band-local check) ---
+  //
+  // ADR-0014 Condition A promotes empty cells with both left and right borders.
+  // Exception: if a column qualifies as a "blank separator" within a row-band —
+  // meaning no cell in that band has an actual value/autofilter fill AND no cell
+  // has a top or bottom border — the promotion is rolled back so the column
+  // acts as a visual gap between side-by-side tables.
+  //
+  // The check is intentionally band-local (not sheet-global) so that a column
+  // that is a real table column in one band is not affected by another band where
+  // it happens to be empty.
+  if (opts.tableDetection.useBorders) {
+    // Identify bands: consecutive rowInfos with filledCount > 0.
+    let bandStart = 0;
+    while (bandStart < rowInfos.length) {
+      if (rowInfos[bandStart].filledCount === 0) {
+        bandStart++;
+        continue;
+      }
+      let bandEnd = bandStart;
+      while (bandEnd + 1 < rowInfos.length && rowInfos[bandEnd + 1].filledCount > 0) {
+        bandEnd++;
+      }
+
+      // Collect band-local evidence for each column.
+      const bandColHasTopBottom = new Set<number>();
+      const bandColHasRealFill = new Set<number>();
+      for (let bi = bandStart; bi <= bandEnd; bi++) {
+        for (const c of rowBorderTopBottomCols[bi]) bandColHasTopBottom.add(c);
+        for (const c of rowInfos[bi].filledCols) {
+          if (!rowBorderPromotedCols[bi].has(c)) bandColHasRealFill.add(c);
+        }
+      }
+
+      // Roll back border promotion for blank separator columns.
+      for (let bi = bandStart; bi <= bandEnd; bi++) {
+        const row = rowInfos[bi];
+        for (const c of rowBorderPromotedCols[bi]) {
+          if (!bandColHasTopBottom.has(c) && !bandColHasRealFill.has(c)) {
+            row.filledCols.delete(c);
+            row.filledCount--;
+          }
+        }
+        if (rowBorderPromotedCols[bi].size > 0) {
+          row.minCol = row.filledCols.size > 0 ? Math.min(...row.filledCols) : -1;
+          row.maxCol = row.filledCols.size > 0 ? Math.max(...row.filledCols) : -1;
+        }
+      }
+
+      bandStart = bandEnd + 1;
+    }
   }
 
   const rawRegions = detectRegions(rowInfos, opts);

@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Superseded (by [ADR-0022](0022-blank-separator-column-exception-for-border-promotion.md))
 
 ## Context
 
