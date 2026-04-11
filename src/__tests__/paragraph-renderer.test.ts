@@ -49,6 +49,22 @@ describe("paragraph rendering", () => {
     expect(markdown).toBe("line1\nline2\nline3");
   });
 
+  it("renders inline rich text runs in a paragraph using per-run markdown", () => {
+    const wb = XLSX.utils.book_new();
+    const ws: XLSX.WorkSheet = {
+      "!ref": "A1:A1",
+      // Space is in the plain run so the bold marker has no trailing whitespace
+      A1: {
+        t: "s",
+        v: "bold plain",
+        r: '<r><rPr><b/></rPr><t>bold</t></r><r><t xml:space="preserve"> plain</t></r>',
+      } as XLSX.CellObject,
+    };
+    XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+    const { markdown } = convertWorkbook(wb, { richText: true });
+    expect(markdown).toBe("**bold** plain");
+  });
+
   it("renders bold text in paragraph using markdown syntax", () => {
     const wb = XLSX.utils.book_new();
     const ws: XLSX.WorkSheet = {

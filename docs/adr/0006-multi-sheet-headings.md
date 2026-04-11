@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Superseded (by [ADR-0020](0020-escape-markdown-in-sheet-name-headings.md))
 
 ## Context
 

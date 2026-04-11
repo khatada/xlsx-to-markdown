@@ -154,6 +154,12 @@ export interface CellData {
   isMergedChild: boolean;
   /** True when this cell has any border (used for table detection) */
   hasBorder: boolean;
+  /**
+   * Pre-built HTML string for inline rich-text runs (bold/italic applied per run).
+   * Set when cell.r XML was parsed successfully; undefined for plain cells.
+   * Used by the HTML table renderer instead of rawValue + cell-level bold/italic.
+   */
+  richTextHtml?: string;
 }
 
 /**

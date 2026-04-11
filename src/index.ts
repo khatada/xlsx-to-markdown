@@ -50,12 +50,21 @@ export function convertWorkbook(
 // Internal
 // ---------------------------------------------------------------------------
 
+/**
+ * Escape Markdown inline special characters in a sheet name used as a heading.
+ * Prevents characters like *, _, `, [, ] from being interpreted as Markdown syntax.
+ */
+function escapeMarkdownHeading(name: string): string {
+  return name.replace(/[\\*_`[\]<>!]/g, "\\$&");
+}
+
 function _convert(workbook: XLSX.WorkBook, opts: ReturnType<typeof resolveOptions>): ConvertResult {
   const allSheetNames = workbook.SheetNames;
 
   // Filter sheets
   let sheetNames: string[];
   if (opts.sheets && opts.sheets.length > 0) {
+    // When an explicit filter is given, honour it regardless of sheet visibility.
     sheetNames = opts.sheets.map((s) => {
       if (typeof s === "number") {
         const name = allSheetNames[s];
@@ -66,7 +75,11 @@ function _convert(workbook: XLSX.WorkBook, opts: ReturnType<typeof resolveOption
       return s;
     });
   } else {
-    sheetNames = allSheetNames;
+    // Default: process only visible sheets (ADR-0021).
+    sheetNames = allSheetNames.filter((_, i) => {
+      const meta = workbook.Workbook?.Sheets?.[i];
+      return !meta?.Hidden; // Hidden=0 visible, Hidden=1 hidden, Hidden=2 very hidden
+    });
   }
 
   // Resolve heading behaviour
@@ -82,7 +95,8 @@ function _convert(workbook: XLSX.WorkBook, opts: ReturnType<typeof resolveOption
   const parts: string[] = [];
   for (const sheet of sheetResults) {
     if (addSheetHeadings) {
-      parts.push(`## ${sheet.name}\n\n${sheet.markdown}`);
+      // Escape special characters so sheet names don't break Markdown inline syntax (ADR-0020).
+      parts.push(`## ${escapeMarkdownHeading(sheet.name)}\n\n${sheet.markdown}`);
     } else {
       parts.push(sheet.markdown);
     }

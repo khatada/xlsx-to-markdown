@@ -205,6 +205,13 @@ function renderHtmlRow(
  * Uses rawValue so that we apply HTML tags rather than Markdown syntax.
  */
 function formatCellHtml(data: CellData, opts: ResolvedOptions): string {
+  // Inline rich text: use pre-built per-run HTML (ADR-0019)
+  if (opts.richText && data.richTextHtml !== undefined) {
+    const val = data.richTextHtml;
+    if (!val) return opts.emptyCell ? escapeHtml(opts.emptyCell) : "";
+    return data.hyperlink ? `<a href="${escapeHtml(data.hyperlink)}">${val}</a>` : val;
+  }
+
   let val = escapeHtml(data.rawValue);
   // Newlines inside cells → <br>
   val = val.replace(/\n/g, "<br>");
@@ -212,7 +219,7 @@ function formatCellHtml(data: CellData, opts: ResolvedOptions): string {
   if (!val) return opts.emptyCell ? escapeHtml(opts.emptyCell) : "";
   if (!opts.richText) return val;
 
-  // Apply HTML inline formatting
+  // Apply HTML inline formatting (cell-level bold/italic)
   if (data.bold && data.italic) val = `<strong><em>${val}</em></strong>`;
   else if (data.bold) val = `<strong>${val}</strong>`;
   else if (data.italic) val = `<em>${val}</em>`;

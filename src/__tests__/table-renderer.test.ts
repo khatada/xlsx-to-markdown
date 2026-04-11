@@ -364,6 +364,67 @@ describe("table rendering (HTML)", () => {
     );
   });
 
+  it("renders inline rich text runs as HTML in table cells", () => {
+    const wb = XLSX.utils.book_new();
+    const ws: XLSX.WorkSheet = {
+      "!ref": "A1:B2",
+      A1: { t: "s", v: "Header" },
+      B1: { t: "s", v: "Note" },
+      A2: { t: "s", v: "Alice" },
+      B2: {
+        t: "s",
+        v: "bold plain",
+        // Space is in the plain run to avoid trailing whitespace inside **...**
+        r: '<r><rPr><b/></rPr><t>bold</t></r><r><t xml:space="preserve"> plain</t></r>',
+      } as XLSX.CellObject,
+    };
+    XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+    const { markdown } = convertWorkbook(wb, { richText: true });
+    expect(markdown).toBe(
+      `<table>
+    <tr>
+    <th>Header</th>
+    <th>Note</th>
+    </tr>
+    <tr>
+    <td>Alice</td>
+    <td><strong>bold</strong> plain</td>
+    </tr>
+</table>`,
+    );
+  });
+
+  it("right-aligns columns where all data cells are numeric-looking strings (cell.t === s)", () => {
+    const wb = XLSX.utils.book_new();
+    const ws: XLSX.WorkSheet = {
+      "!ref": "A1:B3",
+      A1: { t: "s", v: "Item" },
+      B1: { t: "s", v: "Count" },
+      A2: { t: "s", v: "Apples" },
+      B2: { t: "s", v: "100" }, // string type, numeric-looking → right-aligned via regex
+      A3: { t: "s", v: "Bananas" },
+      B3: { t: "s", v: "200" },
+    };
+    XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+    const { markdown } = convertWorkbook(wb);
+    expect(markdown).toBe(
+      `<table>
+    <tr>
+    <th>Item</th>
+    <th style="text-align: right">Count</th>
+    </tr>
+    <tr>
+    <td>Apples</td>
+    <td style="text-align: right">100</td>
+    </tr>
+    <tr>
+    <td>Bananas</td>
+    <td style="text-align: right">200</td>
+    </tr>
+</table>`,
+    );
+  });
+
   it("renders center-aligned cells with text-align: center style", () => {
     const wb = XLSX.utils.book_new();
     const centerAlign = { alignment: { horizontal: "center" } };
