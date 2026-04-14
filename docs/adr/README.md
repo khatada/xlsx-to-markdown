@@ -26,6 +26,7 @@ This directory records design decisions for the xlsx-to-md library in ADR (Archi
 | [0020](0020-escape-markdown-in-sheet-name-headings.md) | Escape Markdown special characters in sheet name headings | Accepted |
 | [0021](0021-auto-exclude-hidden-sheets.md) | Auto-exclude hidden sheets from conversion output | Accepted |
 | [0022](0022-blank-separator-column-exception-for-border-promotion.md) | Add blank-separator-column exception to the LR-border fill promotion | Accepted |
+| [0023](0023-release-automation-via-github-actions.md) | Release Automation via GitHub Actions | Accepted |
 
 ## ADR Format
 
