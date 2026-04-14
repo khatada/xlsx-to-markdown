@@ -1,0 +1,16 @@
+# Source and tests
+src/
+docs/
+
+# Config files
+tsconfig.json
+vitest.config.ts
+.husky/
+.github/
+.claude/
+.secretlintrc.json
+.secretlintignore
+
+# Dev files
+CLAUDE.md
+*.log

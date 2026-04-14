@@ -39,7 +39,7 @@
     "markdown",
     "converter"
   ],
-  "author": "",
+  "author": "khatada",
   "license": "MIT",
   "dependencies": {
     "xlsx": "^0.18.5"
