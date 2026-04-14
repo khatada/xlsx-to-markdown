@@ -1,4 +1,4 @@
-# xlsx-to-md
+# xlsx-to-markdown
 
 Node.js / TypeScript library that converts XLSX files to Markdown.
 
@@ -7,13 +7,13 @@ Mixed content is handled automatically — paragraphs of text and tables can coe
 ## Installation
 
 ```bash
-npm install xlsx-to-md
+npm install xlsx-to-markdown
 ```
 
 ## Quick Start
 
 ```ts
-import { convertXlsxToMarkdown } from 'xlsx-to-md';
+import { convertXlsxToMarkdown } from 'xlsx-to-markdown';
 
 const result = await convertXlsxToMarkdown('report.xlsx');
 console.log(result.markdown);
@@ -40,7 +40,7 @@ Converts an already-parsed SheetJS `WorkBook` object. Useful when you manage the
 
 ```ts
 import * as XLSX from 'xlsx';
-import { convertWorkbook } from 'xlsx-to-md';
+import { convertWorkbook } from 'xlsx-to-markdown';
 
 const wb = XLSX.readFile('report.xlsx', { cellStyles: true });
 const result = convertWorkbook(wb);
