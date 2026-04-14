@@ -4,6 +4,21 @@
   "description": "Convert XLSX files to Markdown, handling mixed content (tables and paragraphs)",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/khatada/xlsx-to-md.git"
+  },
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
