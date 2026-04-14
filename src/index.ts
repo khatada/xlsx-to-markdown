@@ -11,7 +11,7 @@ export type { ConvertOptions, ConvertResult, SheetResult, Region, RegionType } f
  *
  * @example
  * ```ts
- * import { convertXlsxToMarkdown } from 'xlsx-to-md';
+ * import { convertXlsxToMarkdown } from 'xlsx-to-markdown';
  *
  * const result = await convertXlsxToMarkdown('report.xlsx');
  * console.log(result.markdown);

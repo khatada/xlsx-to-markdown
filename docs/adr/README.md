@@ -1,6 +1,6 @@
 # Architecture Decision Records
 
-This directory records design decisions for the xlsx-to-md library in ADR (Architecture Decision Record) format.
+This directory records design decisions for the xlsx-to-markdown library in ADR (Architecture Decision Record) format.
 
 ## List
 
