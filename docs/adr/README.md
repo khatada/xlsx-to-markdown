@@ -26,7 +26,8 @@ This directory records design decisions for the xlsx-to-markdown library in ADR 
 | [0020](0020-escape-markdown-in-sheet-name-headings.md) | Escape Markdown special characters in sheet name headings | Accepted |
 | [0021](0021-auto-exclude-hidden-sheets.md) | Auto-exclude hidden sheets from conversion output | Accepted |
 | [0022](0022-blank-separator-column-exception-for-border-promotion.md) | Add blank-separator-column exception to the LR-border fill promotion | Accepted |
-| [0023](0023-release-automation-via-github-actions.md) | Release Automation via GitHub Actions | Accepted |
+| [0023](0023-release-automation-via-github-actions.md) | Release Automation via GitHub Actions | Superseded (by 0024) |
+| [0024](0024-npm-publish-via-oidc-provenance.md) | Publish to npm via OIDC Provenance (no long-lived NPM_TOKEN) | Accepted |
 
 ## ADR Format
 
