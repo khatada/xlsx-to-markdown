@@ -87,6 +87,22 @@ describe("paragraph rendering", () => {
     expect(markdown).toBe("_emphasis_");
   });
 
+  it("silently skips rows where all cells contain only whitespace", () => {
+    // A2 has value "   " — non-empty by SheetJS standards (v !== "") so it is
+    // included in the same paragraph region as A1 and A3, but value.trim() === ""
+    // so it contributes no text to the output.
+    const wb = XLSX.utils.book_new();
+    const ws: XLSX.WorkSheet = {
+      "!ref": "A1:A3",
+      A1: { t: "s", v: "First" },
+      A2: { t: "s", v: "   " },
+      A3: { t: "s", v: "Second" },
+    };
+    XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+    const { markdown } = convertWorkbook(wb);
+    expect(markdown).toBe("First\n\nSecond");
+  });
+
   it("mixes text and table content in order", () => {
     const wb = buildWorkbook([
       {
