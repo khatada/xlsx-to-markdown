@@ -451,6 +451,67 @@ describe("table rendering (HTML)", () => {
     );
   });
 
+  it("explicit left alignment on numeric data cells prevents right-alignment", () => {
+    // Column B contains numeric values (t='n'), which would normally infer right-alignment.
+    // Explicit left alignment on the data cells must take priority.
+    const leftStyle = { alignment: { horizontal: "left" } };
+    const wb = XLSX.utils.book_new();
+    const ws: XLSX.WorkSheet = {
+      "!ref": "A1:B3",
+      A1: { t: "s", v: "Item" },
+      B1: { t: "s", v: "Count" },
+      A2: { t: "s", v: "Alpha" },
+      B2: { t: "n", v: 10, s: leftStyle } as XLSX.CellObject,
+      A3: { t: "s", v: "Beta" },
+      B3: { t: "n", v: 20, s: leftStyle } as XLSX.CellObject,
+    };
+    XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+    const { markdown } = convertWorkbook(wb);
+    // Explicit left overrides numeric inference — no text-align attribute on any cell
+    expect(markdown).not.toContain("text-align: right");
+    expect(markdown).not.toContain("text-align: center");
+  });
+
+  it("does not right-align columns whose string cells contain scientific notation", () => {
+    // Strings like "1e5" don't match the numeric regex → column stays left-aligned
+    const wb = XLSX.utils.book_new();
+    const ws: XLSX.WorkSheet = {
+      "!ref": "A1:B3",
+      A1: { t: "s", v: "Label" },
+      B1: { t: "s", v: "Value" },
+      A2: { t: "s", v: "Alpha" },
+      B2: { t: "s", v: "1e5" },
+      A3: { t: "s", v: "Beta" },
+      B3: { t: "s", v: "2.5e-3" },
+    };
+    XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+    const { markdown } = convertWorkbook(wb);
+    // Scientific notation is not detected as numeric → no right-align style
+    expect(markdown).not.toContain("text-align: right");
+  });
+
+  it("clamps rowspan when a merge extends beyond the table region end row", () => {
+    // The merge A2:A4 extends to row index 3, but the sheet only covers A1:B3 (rows 0–2).
+    // The clamping logic: rowspan = min(m.e.r, endRow) - m.s.r + 1 = min(3,2) - 1 + 1 = 2.
+    const wb = XLSX.utils.book_new();
+    const ws: XLSX.WorkSheet = {
+      "!ref": "A1:B3",
+      A1: { t: "s", v: "Header" },
+      B1: { t: "s", v: "Data" },
+      A2: { t: "s", v: "Span" },
+      B2: { t: "n", v: 10 },
+      // A3 is a merge child of A2 (not defined — treated as empty)
+      B3: { t: "n", v: 20 },
+      "!merges": [
+        { s: { r: 1, c: 0 }, e: { r: 3, c: 0 } }, // A2:A4 — row 3 is outside !ref
+      ],
+    };
+    XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+    const { markdown } = convertWorkbook(wb);
+    expect(markdown).toContain('rowspan="2"');
+    expect(markdown).not.toContain('rowspan="3"');
+  });
+
   it("renders all rows as td when headerRow is false", () => {
     const wb = buildWorkbook([
       {

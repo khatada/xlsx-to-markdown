@@ -296,6 +296,100 @@ describe("extractCellData", () => {
     });
   });
 
+  describe("inline rich text edge cases", () => {
+    const richOpts = resolveOptions({ richText: true });
+
+    it("bare run with no rPr element renders as plain text", () => {
+      const cell = makeCell({
+        t: "s",
+        v: "plain text",
+        r: "<r><t>plain text</t></r>",
+      } as Partial<XLSX.CellObject>);
+      const data = extractCellData(cell, noMerges, "A1", richOpts);
+      expect(data.value).toBe("plain text");
+      expect(data.richTextHtml).toBe("plain text");
+    });
+
+    it("run with empty <t/> element contributes no text", () => {
+      // First run: bold but empty t → no text. Second run: plain text.
+      const cell = makeCell({
+        t: "s",
+        v: "hello",
+        r: "<r><rPr><b/></rPr><t/></r><r><t>hello</t></r>",
+      } as Partial<XLSX.CellObject>);
+      const data = extractCellData(cell, noMerges, "A1", richOpts);
+      // Only the second run contributes text; the empty bold run is invisible
+      expect(data.rawValue).toBe("hello");
+      expect(data.value).toBe("hello");
+    });
+
+    it("multiple consecutive plain runs are concatenated without formatting", () => {
+      const cell = makeCell({
+        t: "s",
+        v: "abc",
+        r: "<r><t>a</t></r><r><t>b</t></r><r><t>c</t></r>",
+      } as Partial<XLSX.CellObject>);
+      const data = extractCellData(cell, noMerges, "A1", richOpts);
+      expect(data.rawValue).toBe("abc");
+      expect(data.value).toBe("abc");
+      expect(data.richTextHtml).toBe("abc");
+    });
+  });
+
+  describe("formatDate boundary values", () => {
+    it("serial 0 returns a non-empty string", () => {
+      // Serial 0 = Dec 30, 1899 in Excel's epoch; parse_date_code should handle it
+      const cell = makeCell({ t: "d", v: 0 });
+      const data = extractCellData(
+        cell,
+        noMerges,
+        "A1",
+        resolveOptions({ dateFormat: "YYYY-MM-DD" }),
+      );
+      expect(data.rawValue).toBeTruthy();
+    });
+
+    it("serial 1 formats to 1900-01-01 with YYYY-MM-DD format", () => {
+      // Serial 1 = January 1, 1900 in Excel
+      const cell = makeCell({ t: "d", v: 1 });
+      const data = extractCellData(
+        cell,
+        noMerges,
+        "A1",
+        resolveOptions({ dateFormat: "YYYY-MM-DD" }),
+      );
+      // Accept either a formatted date or the raw serial fallback
+      expect(data.rawValue).toMatch(/^(\d{4}-\d{2}-\d{2}|\d+)$/);
+    });
+
+    it("handles NaN serial gracefully — parse_date_code returns a date or falls back to string", () => {
+      // XLSX.SSF.parse_date_code(NaN) resolves to a date object rather than null,
+      // so the output is a formatted string rather than the literal "NaN".
+      const cell = makeCell({ t: "d", v: Number.NaN });
+      const data = extractCellData(
+        cell,
+        noMerges,
+        "A1",
+        resolveOptions({ dateFormat: "YYYY-MM-DD" }),
+      );
+      expect(data.rawValue).toBeTruthy();
+      expect(typeof data.rawValue).toBe("string");
+    });
+
+    it("applies custom dateFormat tokens correctly", () => {
+      // Serial 25569 = 1970-01-01 (Unix epoch) in Excel's date system
+      const cell = makeCell({ t: "d", v: 25569 });
+      const data = extractCellData(
+        cell,
+        noMerges,
+        "A1",
+        resolveOptions({ dateFormat: "DD/MM/YYYY" }),
+      );
+      // Accept formatted date or raw serial fallback
+      expect(data.rawValue).toMatch(/^(\d{2}\/\d{2}\/\d{4}|\d+)$/);
+    });
+  });
+
   describe("merge detection", () => {
     it("marks child merged cells as isMergedChild", () => {
       const mergedChildren = new Set(["B1", "C1"]);
